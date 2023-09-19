@@ -1,0 +1,17 @@
+{
+    "name": "Register with OZON ORD",
+    "id": "1285866970771213280",
+    "api": "1.0.0",
+    "editorType": [
+        "figma"
+    ],
+    "capabilities": [],
+    "enableProposedApi": false,
+    "networkAccess": {
+        "allowedDomains": [
+            "none"
+        ]
+    },
+    "main": "dist/src/code/code.js",
+    "ui": "dist/src/ui/ui.html"
+}
