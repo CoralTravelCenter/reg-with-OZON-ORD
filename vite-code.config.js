@@ -3,7 +3,7 @@ import path from "path"
 
 export default defineConfig({
     build: {
-        emptyOutDir: false,
+        emptyOutDir: true,
         rollupOptions: {
             input:  {
                 index: path.resolve(__dirname, 'src/code/code.js'),
