@@ -4,15 +4,6 @@ figma.showUI(__html__, { width: 600, height: 600 });
 figma.on('selectionchange', informUIAboutSelection);
 informUIAboutSelection();
 
-// figma.ui.onmessage = (msg) => {
-//
-// };
-
-
-
-
-
-
 //======================================================================================================================
 function informUIAboutSelection() {
     if (figma.currentPage.selection.length === 1) {
