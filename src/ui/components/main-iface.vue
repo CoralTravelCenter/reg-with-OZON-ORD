@@ -50,13 +50,14 @@ const closingSettingsDrawer = (done) => {
 
 const brandTabs = ref(null);
 
-const activeBrandTabName = computed({
+const selectedBrand = computed(() => localSettings.brands.find((brand) => brand.selected) || localSettings.brands[0]);
+const selectedBrandKey = computed({
     get() {
         return localSettings.brands.find(brand => brand.selected)?.key || localSettings.brands[0].key;
     },
-    set(name2set) {
+    set(key2set) {
         localSettings.brands.forEach(brand => {
-            if (brand.key === name2set) {
+            if (brand.key === key2set) {
                 brand.selected = true;
             } else {
                 delete brand.selected;
@@ -91,8 +92,7 @@ const activeBrandTabName = computed({
             <el-text type="primary">Local settings</el-text>
         </template>
         <template #default>
-            <div style="border: 1px solid #000; padding: 1em;">{{ activeBrandTabName }}</div>
-            <el-tabs type="border-card" ref="brandTabs" v-model="activeBrandTabName">
+            <el-tabs type="border-card" ref="brandTabs" v-model="selectedBrandKey">
                 <el-tab-pane v-for="brand in localSettings.brands" :name="brand.key">
                     <template #label>
                         <span>{{ brand.name }}</span>
