@@ -7,7 +7,7 @@ import { Setting, WarningFilled, CircleCheckFilled } from "@element-plus/icons-v
 
 const localSettings = reactive({
     brands: [
-        { key: 'coral', name: 'Coral Travel', apiKey: null },
+        { key: 'coral', name: 'Coral Travel', apiKey: null, selected: true },
         { key: 'sunmar', name: 'Sunmar', apiKey: null },
     ],
     settings: {}
@@ -41,16 +41,34 @@ onMounted(() => {
 });
 
 watch(localSettings, (v) => {
-    console.log(v);
+    // console.log(v);
 });
 
 const closingSettingsDrawer = (done) => {
-    done();
+    done(false);
 };
+
+const brandTabs = ref(null);
+
+const activeBrandTabName = computed({
+    get() {
+        return localSettings.brands.find(brand => brand.selected)?.key || localSettings.brands[0].key;
+    },
+    set(name2set) {
+        localSettings.brands.forEach(brand => {
+            if (brand.key === name2set) {
+                brand.selected = true;
+            } else {
+                delete brand.selected;
+            }
+        });
+    },
+});
 
 </script>
 
 <template>
+
     <el-container>
         <el-header>
             <el-row justify="space-between" align="middle">
@@ -58,7 +76,7 @@ const closingSettingsDrawer = (done) => {
                     <el-text type="primary" size="large">Heading</el-text>
                 </el-col>
                 <el-col span="2">
-                    <el-button circle size="large" type="info" :icon="Setting"></el-button>
+                    <el-button circle type="info" :icon="Setting"></el-button>
                 </el-col>
             </el-row>
         </el-header>
@@ -67,19 +85,26 @@ const closingSettingsDrawer = (done) => {
         </el-main>
     </el-container>
 
-    <el-drawer v-model="settingsDrawer" direction="ttb" append-to-body size="auto" before-close="closingSettingsDrawer">
+    <el-drawer v-model="settingsDrawer" direction="ttb" append-to-body size="auto"
+               :before-close="closingSettingsDrawer">
         <template #header>
             <el-text type="primary">Local settings</el-text>
         </template>
         <template #default>
-            <el-tabs type="border-card">
-                <el-tab-pane v-for="brand in localSettings.brands">
+            <div style="border: 1px solid #000; padding: 1em;">{{ activeBrandTabName }}</div>
+            <el-tabs type="border-card" ref="brandTabs" v-model="activeBrandTabName">
+                <el-tab-pane v-for="brand in localSettings.brands" :name="brand.key">
                     <template #label>
                         <span>{{ brand.name }}</span>
-                        <el-icon v-if="brand.apiKey" class="iconic" style="vertical-align: middle" color="#67C23A"><CircleCheckFilled /></el-icon>
-                        <el-icon v-else class="iconic" style="vertical-align: middle" color="#F56C6C"><WarningFilled /></el-icon>
+                        <el-icon v-if="brand.apiKey" class="iconic" style="vertical-align: middle" color="#67C23A">
+                            <CircleCheckFilled/>
+                        </el-icon>
+                        <el-icon v-else class="iconic" style="vertical-align: middle" color="#F56C6C">
+                            <WarningFilled/>
+                        </el-icon>
                     </template>
-                    <el-input v-model="brand.apiKey" type="textarea" autosize placeholder="Paste API key here"></el-input>
+                    <el-input v-model="brand.apiKey" type="textarea" autosize
+                              placeholder="Paste API key here"></el-input>
                 </el-tab-pane>
             </el-tabs>
         </template>
@@ -90,15 +115,16 @@ const closingSettingsDrawer = (done) => {
             </div>
         </template>
     </el-drawer>
+
 </template>
 
 <style lang="less">
-    .el-drawer__header {
-        margin-bottom: 0!important;
-    }
+.el-drawer__header {
+    margin-bottom: 0 !important;
+}
 </style>
 <style scoped lang="less">
-    .el-icon.iconic {
-        margin-left: .33em;
-    }
+.el-icon.iconic {
+    margin-left: .33em;
+}
 </style>

@@ -3,12 +3,9 @@
 </script>
 
 <template>
-    Please select a component
+    <el-empty description="Please select a component"></el-empty>
 </template>
 
 <style scoped lang="less">
-    :root {
-        border: 1px solid #000;
-        padding: 2em;
-    }
+
 </style>
