@@ -86,8 +86,7 @@ const selectedBrandKey = computed({
         </el-main>
     </el-container>
 
-    <el-drawer v-model="settingsDrawer" direction="ttb" append-to-body size="auto"
-               :before-close="closingSettingsDrawer">
+    <el-drawer v-model="settingsDrawer" direction="ttb" append-to-body size="auto" :before-close="closingSettingsDrawer">
         <template #header>
             <el-text type="primary">Local settings</el-text>
         </template>
@@ -96,12 +95,8 @@ const selectedBrandKey = computed({
                 <el-tab-pane v-for="brand in localSettings.brands" :name="brand.key">
                     <template #label>
                         <span>{{ brand.name }}</span>
-                        <el-icon v-if="brand.apiKey" class="iconic" style="vertical-align: middle" color="#67C23A">
-                            <CircleCheckFilled/>
-                        </el-icon>
-                        <el-icon v-else class="iconic" style="vertical-align: middle" color="#F56C6C">
-                            <WarningFilled/>
-                        </el-icon>
+                        <el-icon v-if="brand.apiKey" class="iconic" style="vertical-align: middle" color="#67C23A"><CircleCheckFilled/></el-icon>
+                        <el-icon v-else class="iconic" style="vertical-align: middle" color="#F56C6C"><WarningFilled/></el-icon>
                     </template>
                     <el-input v-model="brand.apiKey" type="textarea" autosize
                               placeholder="Paste API key here"></el-input>
