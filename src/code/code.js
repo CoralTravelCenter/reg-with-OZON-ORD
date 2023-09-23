@@ -11,6 +11,22 @@ figma.clientStorage.getAsync(figmaClientStorageKey).then((something) => {
 figma.on('selectionchange', informUIAboutSelection);
 informUIAboutSelection();
 
+figma.ui.onmessage = (msg) => {
+    switch (msg.key) {
+        case 'store-local-settings':
+            figma.clientStorage.setAsync(figmaClientStorageKey, JSON.parse(msg.value)).then(() => {
+                console.log('+++ store-local-settings: stored: %o', msg.value)
+            });
+            break;
+        case 'fetch':
+            const { url, init } = msg.value;
+            fetch(url, init).then((response) => {
+                console.log("*** fetch response: %o", response);
+            });
+            break;
+    }
+};
+
 //======================================================================================================================
 function informUIAboutSelection() {
     if (figma.currentPage.selection.length === 1) {

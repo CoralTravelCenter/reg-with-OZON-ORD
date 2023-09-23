@@ -8,12 +8,13 @@ import { Setting, WarningFilled, CircleCheckFilled } from "@element-plus/icons-v
 const localSettings = reactive({
     brands: [
         { key: 'coral', name: 'Coral Travel', apiKey: null, selected: true },
-        { key: 'sunmar', name: 'Sunmar', apiKey: null },
+        { key: 'sunmar', name: 'Sunmar', apiKey: null, selected: false },
     ],
     settings: {}
 });
 
-const settingsDrawer = ref(true);
+const settingsDrawerOpen = ref(false);
+const settingsDrawer = ref(null);
 
 const hasValidSelection = ref(false);
 
@@ -22,7 +23,6 @@ let activeComponent = computed(() => {
 });
 
 onMounted(() => {
-    console.log('+++ MainIface mounted');
     window.addEventListener('message', ({ data: { pluginMessage: msg } }) => {
         switch (msg.key) {
             case 'valid-selection':
@@ -34,37 +34,38 @@ onMounted(() => {
                 hasValidSelection.value = false;
                 break;
             case 'sync-local-settings':
-                console.log('+++ update-local-settings: %o', msg.value);
+                Object.assign(localSettings.settings, msg.value.settings);
+                msg.value.brands.forEach((brand) => {
+                    const aBrand = localSettings.brands.find(b => b.key === brand.key);
+                    aBrand && Object.assign(aBrand, brand);
+                });
+                settingsDrawerOpen.value = !selectedBrand().apiKey;
                 break;
         }
     });
+    settingsDrawerOpen.value = !selectedBrand().apiKey;
 });
 
-watch(localSettings, (v) => {
-    // console.log(v);
-});
-
-const closingSettingsDrawer = (done) => {
-    done(false);
-};
+// watch(localSettings, (v) => {
+//     console.log(v);
+// });
 
 const brandTabs = ref(null);
 
-const selectedBrand = computed(() => localSettings.brands.find((brand) => brand.selected) || localSettings.brands[0]);
+const selectedBrand = () => localSettings.brands.find((brand) => brand.selected) || localSettings.brands[0];
 const selectedBrandKey = computed({
     get() {
-        return localSettings.brands.find(brand => brand.selected)?.key || localSettings.brands[0].key;
+        return selectedBrand().key;
     },
     set(key2set) {
-        localSettings.brands.forEach(brand => {
-            if (brand.key === key2set) {
-                brand.selected = true;
-            } else {
-                delete brand.selected;
-            }
-        });
+        localSettings.brands.forEach(brand => brand.selected = brand.key === key2set);
     },
 });
+
+const storeLocalSettigns = () => {
+    parent.postMessage({ pluginMessage: { key: 'store-local-settings', value: JSON.stringify(localSettings) } }, '*');
+    settingsDrawerOpen.value = false;
+};
 
 </script>
 
@@ -74,10 +75,10 @@ const selectedBrandKey = computed({
         <el-header>
             <el-row justify="space-between" align="middle">
                 <el-col span="12">
-                    <el-text type="primary" size="large">Heading</el-text>
+                    <el-text type="primary" size="large">{{ selectedBrand().name }}</el-text>
                 </el-col>
                 <el-col span="2">
-                    <el-button circle type="info" :icon="Setting"></el-button>
+                    <el-button circle type="info" :icon="Setting" @click="settingsDrawerOpen = true"></el-button>
                 </el-col>
             </el-row>
         </el-header>
@@ -86,7 +87,8 @@ const selectedBrandKey = computed({
         </el-main>
     </el-container>
 
-    <el-drawer v-model="settingsDrawer" direction="ttb" append-to-body size="auto" :before-close="closingSettingsDrawer">
+    <el-drawer ref="settingsDrawer" v-model="settingsDrawerOpen" direction="ttb" append-to-body size="auto"
+               :show-close="false" :close-on-click-modal="false" :close-on-press-escape="false">
         <template #header>
             <el-text type="primary">Local settings</el-text>
         </template>
@@ -105,8 +107,7 @@ const selectedBrandKey = computed({
         </template>
         <template #footer>
             <div style="flex: auto">
-                <el-button>Cancel</el-button>
-                <el-button type="primary">OK</el-button>
+                <el-button :disabled="!selectedBrand().apiKey" type="primary" @click="storeLocalSettigns">OK</el-button>
             </div>
         </template>
     </el-drawer>

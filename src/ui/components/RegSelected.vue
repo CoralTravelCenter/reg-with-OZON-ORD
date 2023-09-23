@@ -1,10 +1,9 @@
 <script setup>
+import RegForm from "./RegForm.vue";
 </script>
 
 <template>
-    <el-text>
-        Suitable selection -- reg setup
-    </el-text>
+    <reg-form></reg-form>
 </template>
 
 <style scoped lang="less">

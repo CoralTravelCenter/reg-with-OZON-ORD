@@ -9,7 +9,7 @@
     "enableProposedApi": false,
     "networkAccess": {
         "allowedDomains": [
-            "none"
+            "https://ord.ozon.ru"
         ]
     },
     "main": "dist/src/code/code.js",
