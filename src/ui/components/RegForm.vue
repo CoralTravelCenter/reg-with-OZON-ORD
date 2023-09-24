@@ -22,7 +22,6 @@ onMounted(() => {
         pluginMessage: {
             key: 'fetch',
             value: {
-                // url: 'https://ord.ozon.ru/api/external/contract/list',
                 url: 'http:/localhost:8010/proxy/api/external/contract/list',
                 init: {
                     method:  'POST',
@@ -42,7 +41,6 @@ onMounted(() => {
         pluginMessage: {
             key: 'fetch',
             value: {
-                // url: 'https://ord.ozon.ru/api/external/organization/list',
                 url: 'http:/localhost:8010/proxy/api/external/organisation/list',
                 init: {
                     method:  'POST',
