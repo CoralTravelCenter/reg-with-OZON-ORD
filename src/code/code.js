@@ -22,6 +22,9 @@ figma.ui.onmessage = (msg) => {
             const { url, init } = msg.value;
             fetch(url, init).then((response) => {
                 console.log("*** fetch response: %o", response);
+                response.json().then((json) => {
+                    console.log('JSON %o:', json);
+                });
             });
             break;
     }

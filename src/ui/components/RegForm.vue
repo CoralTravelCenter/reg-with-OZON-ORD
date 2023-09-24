@@ -22,18 +22,34 @@ onMounted(() => {
         pluginMessage: {
             key: 'fetch',
             value: {
-                url: 'https://ord.ozon.ru/api/ord-api/api/ord-api/api/external/contract/list',
+                // url: 'https://ord.ozon.ru/api/external/contract/list',
+                url: 'http:/localhost:8010/proxy/api/external/contract/list',
                 init: {
                     method:  'POST',
                     headers: {
-                        Origin: 'https://www.figma.com',
                         Authorization: `Bearer ${ apiKey.value }`
                     },
                     body: JSON.stringify({
-                        externalContractIds:  ['1044020'],
-                        gtExternalContractId: '',
-                        pageSize: 2500
+                        // externalContractIds:  ['1044020'],
+                        // gtExternalContractId: '',
+                        // pageSize: 2500
                     })
+                }
+            }
+        }
+    }, '*');
+    parent.postMessage({
+        pluginMessage: {
+            key: 'fetch',
+            value: {
+                // url: 'https://ord.ozon.ru/api/external/organization/list',
+                url: 'http:/localhost:8010/proxy/api/external/organisation/list',
+                init: {
+                    method:  'POST',
+                    headers: {
+                        Authorization: `Bearer ${ apiKey.value }`
+                    },
+                    body: JSON.stringify({})
                 }
             }
         }

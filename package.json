@@ -7,13 +7,15 @@
         "start": "concurrently --kill-others -p \"{name}\" -n \"ui  ,code\" -c \"cyan.bold,green.bold\" \"npm run start:ui\" \"npm run start:code\"",
         "start:ui": "vite build --watch --config vite-ui.config.js",
         "start:code": "vite build --watch --config vite-code.config.js",
-        "build": "vite build --config vite-ui.config.js && vite build --config vite-code.config.js"
+        "build": "vite build --config vite-ui.config.js && vite build --config vite-code.config.js",
+        "api-proxy": "lcp --proxyUrl https://ord.ozon.ru"
     },
     "author": "",
     "license": "",
     "dependencies": {
         "@figma/plugin-typings": "^1.40.0",
         "element-plus": "^2.3.14",
+        "local-cors-proxy": "^1.1.0",
         "typescript": "^4.5.4",
         "vue": "^3.2.26"
     },

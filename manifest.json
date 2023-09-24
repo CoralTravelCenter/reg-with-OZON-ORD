@@ -8,9 +8,8 @@
     "capabilities": [],
     "enableProposedApi": false,
     "networkAccess": {
-        "allowedDomains": [
-            "https://ord.ozon.ru"
-        ]
+        "allowedDomains": ["https://ord.ozon.ru"],
+        "devAllowedDomains": ["http://localhost:8010"]
     },
     "main": "dist/src/code/code.js",
     "ui": "dist/src/ui/ui.html"
