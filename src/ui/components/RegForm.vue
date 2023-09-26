@@ -1,9 +1,9 @@
 <script setup>
 
-import { onMounted, reactive, ref } from "vue";
+import { onMounted, reactive, ref, defineProps } from "vue";
+import { callAPI } from "../../call-api";
 
-
-const apiKey = ref("eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjU1Mjg0NDEsImp0aSI6IjQ5OCIsImlhdCI6MTY5Mzk5MjQ0MSwiaXNzIjoiNDMxMCIsInN1YiI6IjI3NTYifQ.km5Eqre0ITzv5ZMLHb8oHRYj9JQZEwsyGtmw5y4dH24_PNhzG4TDjQGQPWA8gZKN7za0046GEtVnrCezY_VX2g");
+const props = defineProps(['apiKey']);
 
 const commonCreativeFields = reactive({
     creativeName: '',
@@ -18,40 +18,12 @@ const commonFieldsRules = reactive({
 });
 
 onMounted(() => {
-    parent.postMessage({
-        pluginMessage: {
-            key: 'fetch',
-            value: {
-                url: 'http:/localhost:8010/proxy/api/external/contract/list',
-                init: {
-                    method:  'POST',
-                    headers: {
-                        Authorization: `Bearer ${ apiKey.value }`
-                    },
-                    body: JSON.stringify({
-                        // externalContractIds:  ['1044020'],
-                        // gtExternalContractId: '',
-                        // pageSize: 2500
-                    })
-                }
-            }
-        }
-    }, '*');
-    parent.postMessage({
-        pluginMessage: {
-            key: 'fetch',
-            value: {
-                url: 'http:/localhost:8010/proxy/api/external/organisation/list',
-                init: {
-                    method:  'POST',
-                    headers: {
-                        Authorization: `Bearer ${ apiKey.value }`
-                    },
-                    body: JSON.stringify({})
-                }
-            }
-        }
-    }, '*');
+    callAPI(props.apiKey, '/api/external/organisation/list', 'POST').then((response_json) => {
+        console.log('+++ organisations: %o', response_json);
+    });
+    callAPI(props.apiKey, '/api/external/contract/list', 'POST').then((response_json) => {
+        console.log('+++ contracts: %o', response_json);
+    });
 });
 
 </script>

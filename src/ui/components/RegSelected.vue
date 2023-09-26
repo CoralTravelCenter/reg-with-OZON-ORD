@@ -1,9 +1,13 @@
 <script setup>
+import { ref, defineProps } from "vue";
 import RegForm from "./RegForm.vue";
+
+const props = defineProps(['apiKey']);
+
 </script>
 
 <template>
-    <reg-form></reg-form>
+    <reg-form :api-key="props.apiKey"></reg-form>
 </template>
 
 <style scoped lang="less">

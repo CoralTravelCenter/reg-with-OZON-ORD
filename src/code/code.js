@@ -1,4 +1,5 @@
 import { figmaClientStorageKey } from "../commons";
+import { listenForAPIRequests } from "../call-api";
 
 figma.showUI(__html__, { width: 600, height: 600 });
 
@@ -18,17 +19,10 @@ figma.ui.onmessage = (msg) => {
                 console.log('+++ store-local-settings: stored: %o', msg.value)
             });
             break;
-        case 'fetch':
-            const { url, init } = msg.value;
-            fetch(url, init).then((response) => {
-                console.log("*** fetch response: %o", response);
-                response.json().then((json) => {
-                    console.log('JSON %o:', json);
-                });
-            });
-            break;
     }
 };
+
+listenForAPIRequests();
 
 //======================================================================================================================
 function informUIAboutSelection() {

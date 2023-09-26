@@ -83,7 +83,7 @@ const storeLocalSettigns = () => {
             </el-row>
         </el-header>
         <el-main>
-            <component :is="activeComponent"></component>
+            <component :is="activeComponent" :api-key="selectedBrand().apiKey"></component>
         </el-main>
     </el-container>
 
