@@ -19,7 +19,7 @@ const settingsDrawer = ref(null);
 const hasValidSelection = ref(false);
 
 let activeComponent = computed(() => {
-    return hasValidSelection.value ? RegSelected : NoSuitableSelection;
+    return hasValidSelection.value && selectedBrand().apiKey ? RegSelected : NoSuitableSelection;
 });
 
 onMounted(() => {

@@ -1,29 +1,48 @@
 <script setup>
 
-import { onMounted, reactive, ref, defineProps } from "vue";
+import { onMounted, reactive, ref, defineProps, watch, watchEffect, toRef, computed } from "vue";
+import { computedAsync } from '@vueuse/core';
 import { callAPI } from "../../call-api";
+import { find } from "lodash";
 
 const props = defineProps(['apiKey']);
+const apiKey = toRef(props, 'apiKey');
 
 const commonCreativeFields = reactive({
-    creativeName: '',
-    contractOrAddendum: '',
-    OKVED: ''
+    title: '',
+    externalContractId: '',
+    okvedCodes: ''
 });
 
 const commonFieldsRules = reactive({
-    creativeName: [
+    title: [
         { required: true, message: 'Придумайте назавнаие', trigger: 'blur' }
     ]
 });
 
+const contracts = computedAsync(async () => {
+    const [{ contract: contracts_list }, { organisation: organisations_list }] = await Promise.all([
+        callAPI(apiKey.value, '/api/external/contract/list', 'POST'),
+        callAPI(apiKey.value, '/api/external/organisation/list', 'POST')
+    ]);
+    return contracts_list.map((contract) => {
+        return {
+            ...contract,
+            customerFullOpf: find(organisations_list, { externalOrganisationId: contract.externalOrganisationCustomerId }).fullOpf,
+            performerFullOpf: find(organisations_list, { externalOrganisationId: contract.externalOrganisationPerformerId }).fullOpf
+        }
+    });
+}, [], { lazy: true });
+
+const selectedContract = ref({});
+
+
+watch(apiKey, (val) => {
+    console.log('+++ apiKey changed: %o', apiKey);
+});
+
 onMounted(() => {
-    callAPI(props.apiKey, '/api/external/organisation/list', 'POST').then((response_json) => {
-        console.log('+++ organisations: %o', response_json);
-    });
-    callAPI(props.apiKey, '/api/external/contract/list', 'POST').then((response_json) => {
-        console.log('+++ contracts: %o', response_json);
-    });
+
 });
 
 </script>
@@ -34,18 +53,38 @@ onMounted(() => {
              size="small"
              :rules="commonFieldsRules"
              status-icon>
-        <el-form-item label="Название креатива" prop="creativeName">
-            <el-input v-model="commonCreativeFields.creativeName"></el-input>
+        <el-form-item label="Название креатива" prop="title">
+            <el-input v-model="commonCreativeFields.title"></el-input>
         </el-form-item>
         <el-row justify="space-between">
             <el-col :span="11">
                 <el-form-item label="Договор или доп.соглашение">
-                    <el-input v-model="commonCreativeFields.contractOrAddendum"></el-input>
+                    <el-select v-model="selectedContract" value-key="externalContractId" placeholder="Выберите">
+<!--                        <el-option-group :key="" :label="">-->
+                            <el-option v-for="contract in contracts" class="contract-item"
+                                       :key="contract.externalContractId"
+                                       :value="contract"
+                                       :label="(contract.contractNumber || contract.additionalContractNumber) + ' от ' + (contract.contractDate || contract.additionalContractNumberDate)">
+                                <el-row>
+                                    <el-space spacer="от">
+                                        <el-text>{{ contract.contractNumber || contract.additionalContractNumber }}</el-text>
+                                        <el-text>{{ contract.contractDate || contract.additionalContractNumberDate }}</el-text>
+                                    </el-space>
+                                </el-row>
+                                <el-row>
+                                    <el-space spacer="&mdash;">
+                                        <el-text>{{ contract.customerFullOpf }}</el-text>
+                                        <el-text>{{ contract.performerFullOpf }}</el-text>
+                                    </el-space>
+                                </el-row>
+                            </el-option>
+<!--                        </el-option-group>-->
+                    </el-select>
                 </el-form-item>
             </el-col>
             <el-col :span="11">
                 <el-form-item label="Коды ОКВЭД">
-                    <el-input v-model="commonCreativeFields.OKVED"></el-input>
+                    <el-input v-model="commonCreativeFields.okvedCodes"></el-input>
                 </el-form-item>
             </el-col>
         </el-row>
@@ -53,5 +92,11 @@ onMounted(() => {
 </template>
 
 <style scoped lang="less">
-
+.el-select {
+    flex: 1;
+}
+.el-select-dropdown__item.contract-item {
+    height: unset;
+    line-height: unset;
+}
 </style>
