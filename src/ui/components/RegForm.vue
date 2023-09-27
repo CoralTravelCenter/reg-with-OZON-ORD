@@ -1,9 +1,8 @@
 <script setup>
 
-import { onMounted, reactive, ref, defineProps, watch, watchEffect, toRef, computed } from "vue";
-import { computedAsync } from '@vueuse/core';
+import { onMounted, reactive, ref, defineProps, watch, toRef, computed } from "vue";
 import { callAPI } from "../../call-api";
-import { find } from "lodash";
+import { find, groupBy } from "lodash";
 
 const props = defineProps(['apiKey']);
 const apiKey = toRef(props, 'apiKey');
@@ -20,29 +19,47 @@ const commonFieldsRules = reactive({
     ]
 });
 
-const contracts = computedAsync(async () => {
+async function fetchRefenceDatas() {
     const [{ contract: contracts_list }, { organisation: organisations_list }] = await Promise.all([
         callAPI(apiKey.value, '/api/external/contract/list', 'POST'),
         callAPI(apiKey.value, '/api/external/organisation/list', 'POST')
     ]);
-    return contracts_list.map((contract) => {
+    contracts.value = contracts_list.map((contract) => {
         return {
             ...contract,
             customerFullOpf: find(organisations_list, { externalOrganisationId: contract.externalOrganisationCustomerId }).fullOpf,
             performerFullOpf: find(organisations_list, { externalOrganisationId: contract.externalOrganisationPerformerId }).fullOpf
         }
     });
-}, [], { lazy: true });
+}
+
+const contracts = ref([]);
+
+const contractsGroupped = computed(() => {
+    const grouppedByContractType = groupBy(contracts.value, (contract) => {
+        return contract.contractType === 'CONTRACT_TYPE_ADDITIONAL_AGREEMENT' ? 'addendum' : 'contract';
+    });
+    const groupped = [];
+    for (let group in grouppedByContractType) {
+        groupped.push({
+            key: group,
+            label: { contract: 'Договор', addendum: 'Доп.соглашение' }[group],
+            list: grouppedByContractType[group]
+        });
+    }
+    return groupped;
+});
 
 const selectedContract = ref({});
 
 
 watch(apiKey, (val) => {
     console.log('+++ apiKey changed: %o', apiKey);
+    fetchRefenceDatas();
 });
 
 onMounted(() => {
-
+    fetchRefenceDatas();
 });
 
 </script>
@@ -60,8 +77,8 @@ onMounted(() => {
             <el-col :span="11">
                 <el-form-item label="Договор или доп.соглашение">
                     <el-select v-model="selectedContract" value-key="externalContractId" placeholder="Выберите">
-<!--                        <el-option-group :key="" :label="">-->
-                            <el-option v-for="contract in contracts" class="contract-item"
+                        <el-option-group v-for="group in contractsGroupped" :key="group.key" :label="group.label">
+                            <el-option v-for="contract in group.list" class="contract-item"
                                        :key="contract.externalContractId"
                                        :value="contract"
                                        :label="(contract.contractNumber || contract.additionalContractNumber) + ' от ' + (contract.contractDate || contract.additionalContractNumberDate)">
@@ -78,7 +95,7 @@ onMounted(() => {
                                     </el-space>
                                 </el-row>
                             </el-option>
-<!--                        </el-option-group>-->
+                        </el-option-group>
                     </el-select>
                 </el-form-item>
             </el-col>

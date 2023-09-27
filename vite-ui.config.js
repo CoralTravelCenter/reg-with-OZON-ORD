@@ -7,6 +7,7 @@ import path from "path"
 export default defineConfig({
     plugins: [vue(), viteSingleFile()],
     build:   {
+        // minify: false,
         target:                "esnext",
         assetsInlineLimit:     100000000,
         chunkSizeWarningLimit: 100000000,
