@@ -9,6 +9,9 @@ const apiKey = toRef(props, 'apiKey');
 
 const commonCreativeFields = reactive({
     title: '',
+    isSocialAdv: false,
+    isNative: false,
+    isSelfPromotion: false,
     externalContractId: '',
     okvedCodes: ''
 });
@@ -31,9 +34,11 @@ async function fetchRefenceDatas() {
             performerFullOpf: find(organisations_list, { externalOrganisationId: contract.externalOrganisationPerformerId }).fullOpf
         }
     });
+    organisations.value = organisations_list;
 }
 
 const contracts = ref([]);
+const organisations = ref([]);
 
 const contractsGroupped = computed(() => {
     const grouppedByContractType = groupBy(contracts.value, (contract) => {
@@ -51,6 +56,7 @@ const contractsGroupped = computed(() => {
 });
 
 const selectedContract = ref({});
+const selectedOrganisation = ref({});
 
 
 watch(apiKey, (val) => {
@@ -70,12 +76,27 @@ onMounted(() => {
              size="small"
              :rules="commonFieldsRules"
              status-icon>
-        <el-form-item label="Название креатива" prop="title">
+        <el-form-item in label="Название креатива" prop="title">
             <el-input v-model="commonCreativeFields.title"></el-input>
         </el-form-item>
-        <el-row justify="space-between">
-            <el-col :span="11">
-                <el-form-item label="Договор или доп.соглашение">
+        <el-form-item>
+            <el-space size="large">
+                <el-checkbox v-model="commonCreativeFields.isSocialAdv" label="Социальная реклама"></el-checkbox>
+                <el-checkbox v-model="commonCreativeFields.isNative" label="Нативная реклама"></el-checkbox>
+                <el-checkbox v-model="commonCreativeFields.isSelfPromotion" label="Самореклама"></el-checkbox>
+            </el-space>
+        </el-form-item>
+        <el-row justify="space-between" gutter="20">
+            <el-col :span="12">
+                <el-form-item v-if="commonCreativeFields.isSelfPromotion" label="Контрагент саморекламы">
+                    <el-select v-model="selectedOrganisation" value-key="externalOrganisationId" placeholder="Выберите">
+                        <el-option v-for="org in organisations"
+                                   :key="org.externalOrganisationId"
+                                   :value="org"
+                                   :label="org.fullOpf"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item v-else label="Договор или доп.соглашение">
                     <el-select v-model="selectedContract" value-key="externalContractId" placeholder="Выберите">
                         <el-option-group v-for="group in contractsGroupped" :key="group.key" :label="group.label">
                             <el-option v-for="contract in group.list" class="contract-item"
@@ -99,7 +120,7 @@ onMounted(() => {
                     </el-select>
                 </el-form-item>
             </el-col>
-            <el-col :span="11">
+            <el-col :span="12">
                 <el-form-item label="Коды ОКВЭД">
                     <el-input v-model="commonCreativeFields.okvedCodes"></el-input>
                 </el-form-item>
