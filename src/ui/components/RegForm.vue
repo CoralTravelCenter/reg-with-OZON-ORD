@@ -15,15 +15,21 @@ const commonCreativeFields = reactive({
     isSocialAdv: false,
     isNative: false,
     isSelfPromotion: false,
-    externalContractId: selectedContract.externalContractId,
-    externalOrganisationId: selectedOrganisation.externalOrganisationId,
+    externalContractId: '',
+    externalOrganisationId: '',
     okvedCodes: []
+});
+watch(selectedContract, (newSelectedContract) => {
+    commonCreativeFields.externalContractId = newSelectedContract.externalContractId;
+});
+watch(selectedOrganisation, (newSelectedOrganisation) => {
+    commonCreativeFields.externalOrganisationId = newSelectedOrganisation.externalOrganisationId;
 });
 
 const commonFieldsRules = reactive({
     title: [{ required: true, message: 'Придумайте назавнаие', trigger: 'blur' }],
-    externalContractId: [{ required: true, message: 'Необходимо выбрать из списка', trigger: 'blur' }],
-    externalOrganisationId: [{ required: true, message: 'Необходимо выбрать из списка', trigger: 'blur' }]
+    externalContractId: [{ required: true, message: 'Необходимо выбрать из списка', trigger: 'change' }],
+    externalOrganisationId: [{ required: true, message: 'Необходимо выбрать из списка', trigger: 'change' }]
 });
 
 async function fetchRefenceDatas() {
@@ -69,7 +75,7 @@ async function queryOKVEDRefence(query = '') {
         const okved_all = await callAPI(apiKey.value, '/api/external/dict/okved', 'POST', {}, { Accept: 'application/json' });
         const query_words = query.toUpperCase().split(/\s+/);
         okved.value = okved_all.filter((okved_item) => {
-            if (~okved_item.code.indexOf(query)) {
+            if (okved_item.code.indexOf(query) === 0) {
                 return true;
             } else {
                 const okved_name_words = okved_item.name.toUpperCase().split(/\s+/);
