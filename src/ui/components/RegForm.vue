@@ -7,19 +7,23 @@ import { find, groupBy } from "lodash";
 const props = defineProps(['apiKey']);
 const apiKey = toRef(props, 'apiKey');
 
+const selectedContract = ref({});
+const selectedOrganisation = ref({});
+
 const commonCreativeFields = reactive({
     title: '',
     isSocialAdv: false,
     isNative: false,
     isSelfPromotion: false,
-    externalContractId: '',
-    okvedCodes: ''
+    externalContractId: selectedContract.externalContractId,
+    externalOrganisationId: selectedOrganisation.externalOrganisationId,
+    okvedCodes: []
 });
 
 const commonFieldsRules = reactive({
-    title: [
-        { required: true, message: 'Придумайте назавнаие', trigger: 'blur' }
-    ]
+    title: [{ required: true, message: 'Придумайте назавнаие', trigger: 'blur' }],
+    externalContractId: [{ required: true, message: 'Необходимо выбрать из списка', trigger: 'blur' }],
+    externalOrganisationId: [{ required: true, message: 'Необходимо выбрать из списка', trigger: 'blur' }]
 });
 
 async function fetchRefenceDatas() {
@@ -34,7 +38,9 @@ async function fetchRefenceDatas() {
             performerFullOpf: find(organisations_list, { externalOrganisationId: contract.externalOrganisationPerformerId }).fullOpf
         }
     });
+    selectedContract.value = {};
     organisations.value = organisations_list;
+    selectedOrganisation.value = {};
 }
 
 const contracts = ref([]);
@@ -47,20 +53,36 @@ const contractsGroupped = computed(() => {
     const groupped = [];
     for (let group in grouppedByContractType) {
         groupped.push({
-            key: group,
+            key:   group,
             label: { contract: 'Договор', addendum: 'Доп.соглашение' }[group],
-            list: grouppedByContractType[group]
+            list:  grouppedByContractType[group]
         });
     }
     return groupped;
 });
 
-const selectedContract = ref({});
-const selectedOrganisation = ref({});
+const loadingOKVEDRefence = ref(false);
+const okved = ref([]);
+async function queryOKVEDRefence(query = '') {
+    if (query.length >= 2) {
+        loadingOKVEDRefence.value = true;
+        const okved_all = await callAPI(apiKey.value, '/api/external/dict/okved', 'POST', {}, { Accept: 'application/json' });
+        const query_words = query.toUpperCase().split(/\s+/);
+        okved.value = okved_all.filter((okved_item) => {
+            if (~okved_item.code.indexOf(query)) {
+                return true;
+            } else {
+                const okved_name_words = okved_item.name.toUpperCase().split(/\s+/);
+                return query_words.every(query_word => okved_name_words.some(word => word.indexOf(query_word) === 0));
+            }
+        });
+        loadingOKVEDRefence.value = false;
+    }
+}
+
 
 
 watch(apiKey, (val) => {
-    console.log('+++ apiKey changed: %o', apiKey);
     fetchRefenceDatas();
 });
 
@@ -88,7 +110,7 @@ onMounted(() => {
         </el-form-item>
         <el-row justify="space-between" gutter="20">
             <el-col :span="12">
-                <el-form-item v-if="commonCreativeFields.isSelfPromotion" label="Контрагент саморекламы">
+                <el-form-item v-if="commonCreativeFields.isSelfPromotion" prop="externalOrganisationId" label="Контрагент саморекламы">
                     <el-select v-model="selectedOrganisation" value-key="externalOrganisationId" placeholder="Выберите">
                         <el-option v-for="org in organisations"
                                    :key="org.externalOrganisationId"
@@ -96,7 +118,7 @@ onMounted(() => {
                                    :label="org.fullOpf"></el-option>
                     </el-select>
                 </el-form-item>
-                <el-form-item v-else label="Договор или доп.соглашение">
+                <el-form-item v-else prop="externalContractId" label="Договор или доп.соглашение">
                     <el-select v-model="selectedContract" value-key="externalContractId" placeholder="Выберите">
                         <el-option-group v-for="group in contractsGroupped" :key="group.key" :label="group.label">
                             <el-option v-for="contract in group.list" class="contract-item"
@@ -122,7 +144,14 @@ onMounted(() => {
             </el-col>
             <el-col :span="12">
                 <el-form-item label="Коды ОКВЭД">
-                    <el-input v-model="commonCreativeFields.okvedCodes"></el-input>
+                    <el-select v-model="commonCreativeFields.okvedCodes"
+                               multiple filterable remote
+                               :remote-method="queryOKVEDRefence"
+                               :loading="loadingOKVEDRefence">
+                        <el-option v-for="item in okved" :key="item.code" :value="item.code" :label="item.code">
+                            {{ item.name }} ({{ item.code }})
+                        </el-option>
+                    </el-select>
                 </el-form-item>
             </el-col>
         </el-row>
@@ -136,5 +165,11 @@ onMounted(() => {
 .el-select-dropdown__item.contract-item {
     height: unset;
     line-height: unset;
+}
+</style>
+
+<style lang="less">
+.el-popper {
+    max-width: 98%;
 }
 </style>

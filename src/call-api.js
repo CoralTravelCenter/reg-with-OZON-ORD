@@ -30,7 +30,7 @@ export function listenForAPIRequests() {
     });
 }
 
-export function callAPI(api_key, endpoint, method, request_body_json = {}) {
+export function callAPI(api_key, endpoint, method, request_body_json = {}, headers = {}) {
     if (!messageListener) {
         messageListener = actualMessageHandler;
         window.addEventListener('message', messageListener);
@@ -47,7 +47,8 @@ export function callAPI(api_key, endpoint, method, request_body_json = {}) {
                     init: {
                         method:  method,
                         headers: {
-                            Authorization: `Bearer ${ api_key }`
+                            Authorization: `Bearer ${ api_key }`,
+                            ...headers
                         },
                         body: JSON.stringify(request_body_json)
                     }
