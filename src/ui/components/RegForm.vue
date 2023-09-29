@@ -3,12 +3,10 @@
 import { onMounted, reactive, ref, defineProps, watch, toRef, computed } from "vue";
 import { callAPI } from "../../call-api";
 import { find, groupBy } from "lodash";
+import { Plus, Delete } from '@element-plus/icons-vue';
 
 const props = defineProps(['apiKey']);
 const apiKey = toRef(props, 'apiKey');
-
-const selectedContract = ref({});
-const selectedOrganisation = ref({});
 
 const commonCreativeFields = reactive({
     title: '',
@@ -17,20 +15,54 @@ const commonCreativeFields = reactive({
     isSelfPromotion: false,
     externalContractId: '',
     externalOrganisationId: '',
-    okvedCodes: []
+    okvedCodes: ['79.12'],
+    paymentType: '',
+    advObjectType: 'ADV_OBJECT_TYPE_BANNER',
+    hasTargetLink: false,
+    targetLinks: ['']
 });
-watch(selectedContract, (newSelectedContract) => {
-    commonCreativeFields.externalContractId = newSelectedContract.externalContractId;
-});
-watch(selectedOrganisation, (newSelectedOrganisation) => {
-    commonCreativeFields.externalOrganisationId = newSelectedOrganisation.externalOrganisationId;
-});
-
 const commonFieldsRules = reactive({
     title: [{ required: true, message: 'Придумайте назавнаие', trigger: 'blur' }],
     externalContractId: [{ required: true, message: 'Необходимо выбрать из списка', trigger: 'change' }],
-    externalOrganisationId: [{ required: true, message: 'Необходимо выбрать из списка', trigger: 'change' }]
+    externalOrganisationId: [{ required: true, message: 'Необходимо выбрать из списка', trigger: 'change' }],
+    paymentType: [{ required: true, message: 'Необходимо выбрать из списка', trigger: 'change' }],
+    advObjectType: [{ required: true, message: 'Необходимо выбрать из списка', trigger: 'change' }],
+    targetLinks: [{
+        required: true,
+        type:     'array',
+        defaultField: { type: 'string', required: true, message: 'Заполните все поля и/или удалите лишние',  trigger: 'change' },
+        message: 'Заполните все поля и/или удалите лишние',
+        trigger: 'change'
+    }],
 });
+const paymentTypes = [
+    { type: 'PAYMENT_TYPE_CPM', label: 'CPM' },
+    { type: 'PAYMENT_TYPE_CPC', label: 'CPC' },
+    { type: 'PAYMENT_TYPE_CPA', label: 'CPA' },
+    { type: 'PAYMENT_TYPE_OTHER', label: 'Другой' },
+];
+
+const advObjectTypes = [
+    { type: 'ADV_OBJECT_TYPE_BANNER', label: 'Баннер' },
+    { type: 'ADV_OBJECT_TYPE_TEXT_BLOCK', label: 'Текстовый или текстово-графический блок' },
+    { type: 'ADV_OBJECT_TYPE_VIDEO', label: 'Видеоролик' },
+    { type: 'ADV_OBJECT_TYPE_TEXT_GRAPHIC_BLOCK', label: 'Текстово-графический блок' },
+    { type: 'ADV_OBJECT_TYPE_LIVE_VIDEO', label: 'Видеотрансляция в прямом эфире' },
+    { type: 'ADV_OBJECT_TYPE_LIVE_AUDIO', label: 'Аудиотрансляция в прямом эфире' },
+    { type: 'ADV_OBJECT_TYPE_AUDIO_REC', label: 'Аудиозапись' },
+    { type: 'ADV_OBJECT_TYPE_OTHER', label: 'Другая' },
+];
+
+const selectedContract = ref({});
+const selectedOrganisation = ref({});
+const selectedPaymentType = ref({});
+const selectedAdvObjectType = ref(advObjectTypes[0]);
+
+watch(selectedContract, newSelectedContract => commonCreativeFields.externalContractId = newSelectedContract.externalContractId);
+watch(selectedOrganisation, newSelectedOrganisation => commonCreativeFields.externalOrganisationId = newSelectedOrganisation.externalOrganisationId);
+watch(selectedPaymentType, newPaymentType => commonCreativeFields.paymentType = newPaymentType.type);
+watch(selectedAdvObjectType, newValue => commonCreativeFields.advObjectType = newValue.type);
+
 
 async function fetchRefenceDatas() {
     const [{ contract: contracts_list }, { organisation: organisations_list }] = await Promise.all([
@@ -108,10 +140,10 @@ onMounted(() => {
             <el-input v-model="commonCreativeFields.title"></el-input>
         </el-form-item>
         <el-form-item>
-            <el-space size="large">
+            <el-space size="large" alignment="center">
+                <el-switch v-model="commonCreativeFields.isSelfPromotion" active-text="Самореклама"></el-switch>
                 <el-checkbox v-model="commonCreativeFields.isSocialAdv" label="Социальная реклама"></el-checkbox>
                 <el-checkbox v-model="commonCreativeFields.isNative" label="Нативная реклама"></el-checkbox>
-                <el-checkbox v-model="commonCreativeFields.isSelfPromotion" label="Самореклама"></el-checkbox>
             </el-space>
         </el-form-item>
         <el-row justify="space-between" gutter="20">
@@ -161,6 +193,40 @@ onMounted(() => {
                 </el-form-item>
             </el-col>
         </el-row>
+        <el-row justify="space-between" gutter="20">
+            <el-col span="12" style="flex: 1">
+                <el-form-item prop="paymentType" label="Тип оплаты рекламной кампании">
+                    <el-select v-model="selectedPaymentType" value-key="type" placeholder="Выберите">
+                        <el-option v-for="payment in paymentTypes"
+                                   :key="payment.type"
+                                   :label="payment.label"
+                                   :value="payment"></el-option>
+                    </el-select>
+                </el-form-item>
+            </el-col>
+            <el-col span="12" style="flex: 1">
+                <el-form-item prop="advObjectType" label="Форма распространения рекламы">
+                    <el-select v-model="selectedAdvObjectType" value-key="type" placeholder="Выберите">
+                        <el-option v-for="advObject in advObjectTypes"
+                                   :key="advObject.type"
+                                   :label="advObject.label"
+                                   :value="advObject"></el-option>
+                    </el-select>
+                </el-form-item>
+            </el-col>
+        </el-row>
+        <el-form-item>
+            <el-switch v-model="commonCreativeFields.hasTargetLink" active-text="Целевые ссылки"></el-switch>
+        </el-form-item>
+        <el-form-item v-if="commonCreativeFields.hasTargetLink" prop="targetLinks">
+            <div v-for="(link, idx) in commonCreativeFields.targetLinks" :key="idx" class="target-url-input">
+                <el-input v-model="commonCreativeFields.targetLinks[idx]"></el-input>
+                <el-button v-if="idx === (commonCreativeFields.targetLinks.length-1)" :icon="Plus"
+                           @click="commonCreativeFields.targetLinks.push('')"></el-button>
+                <el-button v-if="commonCreativeFields.targetLinks.length > 1" :icon="Delete"
+                           @click="commonCreativeFields.targetLinks.splice(idx,1)"></el-button>
+            </div>
+        </el-form-item>
     </el-form>
 </template>
 
@@ -172,6 +238,22 @@ onMounted(() => {
     height: unset;
     line-height: unset;
 }
+
+.target-url-input {
+    width: 100%;
+    display: flex;
+    gap: 10px;
+    >* {
+        margin: 0;
+    }
+    >*:nth-child(1) {
+        flex: 1;
+    }
+    & + .target-url-input {
+        margin-top: 10px;
+    }
+}
+
 </style>
 
 <style lang="less">

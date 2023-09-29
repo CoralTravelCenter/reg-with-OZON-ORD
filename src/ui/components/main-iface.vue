@@ -120,6 +120,9 @@ const storeLocalSettigns = () => {
 }
 </style>
 <style scoped lang="less">
+.el-header {
+    height: auto;
+}
 .el-icon.iconic {
     margin-left: .33em;
 }
