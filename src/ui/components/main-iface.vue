@@ -17,6 +17,7 @@ const settingsDrawerOpen = ref(false);
 const settingsDrawer = ref(null);
 
 const hasValidSelection = ref(false);
+const selectionInfos = ref([]);
 
 let activeComponent = computed(() => {
     return hasValidSelection.value && selectedBrand().apiKey ? RegSelected : NoSuitableSelection;
@@ -26,12 +27,14 @@ onMounted(() => {
     window.addEventListener('message', ({ data: { pluginMessage: msg } }) => {
         switch (msg.key) {
             case 'valid-selection':
-                console.log('+++ VALID SELECTION: %o', msg.value);
+                // console.log('+++ VALID SELECTION: %o', msg.value);
                 hasValidSelection.value = true;
+                selectionInfos.value = msg.value;
                 break;
             case 'invalid-selection':
-                console.log('+++ INVALID SELECTION');
+                // console.log('+++ INVALID SELECTION');
                 hasValidSelection.value = false;
+                selectionInfos.value = [];
                 break;
             case 'sync-local-settings':
                 Object.assign(localSettings.settings, msg.value.settings);
@@ -83,7 +86,7 @@ const storeLocalSettigns = () => {
             </el-row>
         </el-header>
         <el-main>
-            <component :is="activeComponent" :api-key="selectedBrand().apiKey"></component>
+            <component :is="activeComponent" :api-key="selectedBrand().apiKey" :selection-infos="selectionInfos"></component>
         </el-main>
     </el-container>
 

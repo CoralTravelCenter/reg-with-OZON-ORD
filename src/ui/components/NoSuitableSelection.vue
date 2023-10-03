@@ -3,7 +3,7 @@
 </script>
 
 <template>
-    <el-empty description="Please select a component"></el-empty>
+    <el-empty description="Please select one or more FRAME(s)"></el-empty>
 </template>
 
 <style scoped lang="less">

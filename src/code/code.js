@@ -19,6 +19,10 @@ figma.ui.onmessage = (msg) => {
                 console.log('+++ store-local-settings: stored: %o', msg.value)
             });
             break;
+        case 'resize-ui':
+            const { width = 600, height = 600 } = msg.value;
+            figma.ui.resize(width, height);
+            break;
     }
 };
 
@@ -26,13 +30,16 @@ listenForAPIRequests();
 
 //======================================================================================================================
 function informUIAboutSelection() {
-    if (figma.currentPage.selection.length === 1) {
-        const selected = figma.currentPage.selection[0];
-        if (selected.type === 'COMPONENT_SET') {
-            figma.ui.postMessage({ key: 'valid-selection', value: selected.children });
-        } else if (selected.type === 'COMPONENT') {
-            figma.ui.postMessage({ key: 'valid-selection', value: [selected] });
-        }
+    const currentSelection = Array.from(figma.currentPage.selection);
+    if (currentSelection.length && currentSelection.every(node => node.type === 'FRAME')) {
+        const selectionInfos = currentSelection.map((frame) => {
+            return {
+                nodeId:              frame.id,
+                nodeName:            frame.name,
+                markerPlaceholderId: frame.findOne(n => n.name === '#marker')?.id,
+            }
+        });
+        figma.ui.postMessage({ key: 'valid-selection', value: selectionInfos });
     } else {
         figma.ui.postMessage({ key: 'invalid-selection' });
     }

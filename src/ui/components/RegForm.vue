@@ -1,15 +1,22 @@
 <script setup>
 
-import { onMounted, reactive, ref, defineProps, watch, toRef, computed } from "vue";
+import { onMounted, reactive, ref, defineProps, watch, toRef, computed, onUpdated } from "vue";
 import { callAPI } from "../../call-api";
 import { find, groupBy } from "lodash";
 import { Plus, Delete } from '@element-plus/icons-vue';
 
-const props = defineProps(['apiKey']);
+const props = defineProps(['apiKey', 'selectionInfos']);
 const apiKey = toRef(props, 'apiKey');
+const selectionInfos = toRef(props, 'selectionInfos');
+const openedCreativeNodeId = ref(selectionInfos.value[0].nodeId);
+
+watch(selectionInfos, (infos) => openedCreativeNodeId.value = infos[0].nodeId);
+
+const regForm = ref(null);
 
 const commonCreativeFields = reactive({
     title: '',
+    description: '',
     isSocialAdv: false,
     isNative: false,
     isSelfPromotion: false,
@@ -23,6 +30,7 @@ const commonCreativeFields = reactive({
 });
 const commonFieldsRules = reactive({
     title: [{ required: true, message: 'Придумайте назавнаие', trigger: 'blur' }],
+    description: [{ required: true, message: 'Опишите креатив', trigger: 'blur' }],
     externalContractId: [{ required: true, message: 'Необходимо выбрать из списка', trigger: 'change' }],
     externalOrganisationId: [{ required: true, message: 'Необходимо выбрать из списка', trigger: 'change' }],
     paymentType: [{ required: true, message: 'Необходимо выбрать из списка', trigger: 'change' }],
@@ -118,26 +126,32 @@ async function queryOKVEDRefence(query = '') {
     }
 }
 
-
-
 watch(apiKey, (val) => {
     fetchRefenceDatas();
 });
 
 onMounted(() => {
     fetchRefenceDatas();
+    parent.postMessage({ pluginMessage: { key:   'resize-ui', value: { height: document.documentElement.scrollHeight } } }, '*');
+});
+
+onUpdated(() => {
+    parent.postMessage({ pluginMessage: { key:   'resize-ui', value: { height: document.documentElement.scrollHeight } } }, '*');
 });
 
 </script>
 
 <template>
-    <el-form label-position="top"
-             :model="commonCreativeFields"
-             size="small"
+    <el-form ref="regForm"
+             label-position="top" size="small" status-icon :model="commonCreativeFields"
              :rules="commonFieldsRules"
-             status-icon>
-        <el-form-item in label="Название креатива" prop="title">
+             @submit.prevent>
+        <el-form-item label="Название креатива" prop="title">
             <el-input v-model="commonCreativeFields.title"></el-input>
+        </el-form-item>
+        <el-form-item label="Общее описание объекта рекламирования" prop="description">
+            <el-input v-model="commonCreativeFields.description" type="textarea" :autosize="{ minRows: 3 }"
+            placeholder="Укажите: &#10- Бренд (или несколько брендов) рекламируемых товаров или услуг; &#10- Вид товара/услуги; &#10- Дополнительную информацию."></el-input>
         </el-form-item>
         <el-form-item>
             <el-space size="large" alignment="center">
@@ -224,13 +238,39 @@ onMounted(() => {
                 <el-button v-if="idx === (commonCreativeFields.targetLinks.length-1)" :icon="Plus"
                            @click="commonCreativeFields.targetLinks.push('')"></el-button>
                 <el-button v-if="commonCreativeFields.targetLinks.length > 1" :icon="Delete"
-                           @click="commonCreativeFields.targetLinks.splice(idx,1)"></el-button>
+                           @click="commonCreativeFields.targetLinks.splice(idx,1); regForm.validateField('targetLinks')"></el-button>
             </div>
+        </el-form-item>
+        <el-form-item label="Данные о креативе">
+            <el-collapse v-model="openedCreativeNodeId" accordion style="flex: 1">
+                <el-collapse-item v-for="frameInfo in selectionInfos" :name="frameInfo.nodeId">
+                    <template #title>
+                        {{ frameInfo.nodeName }}
+                    </template>
+                    <div class="creative-body">
+                        <el-image style="width: 150px;height: 150px;" fit="contain">
+                            <template #placeholder>Rendering...</template>
+                            <template #error>Rendering...</template>
+                        </el-image>
+                        <el-input type="textarea" rows="2" placeholder="Текстовые данные креатива"></el-input>
+                        <el-input type="textarea" rows="3" placeholder="Краткое описание изображения креатива"></el-input>
+                    </div>
+                </el-collapse-item>
+            </el-collapse>
         </el-form-item>
     </el-form>
 </template>
 
 <style scoped lang="less">
+
+.creative-body {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    .el-image {
+        grid-row: span 2;
+    }
+}
+
 .el-select {
     flex: 1;
 }
