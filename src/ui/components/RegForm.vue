@@ -10,9 +10,9 @@ const apiKey = toRef(props, 'apiKey');
 const selectionInfos = toRef(props, 'selectionInfos');
 const openedCreativeNodeId = ref(selectionInfos.value[0].nodeId);
 
-watch(selectionInfos, (infos) => openedCreativeNodeId.value = infos[0].nodeId);
-
 const regForm = ref(null);
+
+const shareCreativeTexts = ref(true);
 
 const commonCreativeFields = reactive({
     title: '',
@@ -26,7 +26,9 @@ const commonCreativeFields = reactive({
     paymentType: '',
     advObjectType: 'ADV_OBJECT_TYPE_BANNER',
     hasTargetLink: false,
-    targetLinks: ['']
+    targetLinks: [''],
+    sharedCreativeText: '',
+    sharedCreativeDescription: ''
 });
 const commonFieldsRules = reactive({
     title: [{ required: true, message: 'Придумайте назавнаие', trigger: 'blur' }],
@@ -70,6 +72,7 @@ watch(selectedContract, newSelectedContract => commonCreativeFields.externalCont
 watch(selectedOrganisation, newSelectedOrganisation => commonCreativeFields.externalOrganisationId = newSelectedOrganisation.externalOrganisationId);
 watch(selectedPaymentType, newPaymentType => commonCreativeFields.paymentType = newPaymentType.type);
 watch(selectedAdvObjectType, newValue => commonCreativeFields.advObjectType = newValue.type);
+watch(selectionInfos, (infos) => openedCreativeNodeId.value = infos[0].nodeId);
 
 
 async function fetchRefenceDatas() {
@@ -241,9 +244,15 @@ onUpdated(() => {
                            @click="commonCreativeFields.targetLinks.splice(idx,1); regForm.validateField('targetLinks')"></el-button>
             </div>
         </el-form-item>
-        <el-form-item label="Данные о креативе">
+        <el-form-item>
+            <template #label>
+                <el-space size="large" alignment="center">
+                    <el-text>Данные о креативе</el-text>
+                    <el-checkbox v-model="shareCreativeTexts">Одинаковое описание для всех креативов</el-checkbox>
+                </el-space>
+            </template>
             <el-collapse v-model="openedCreativeNodeId" accordion style="flex: 1">
-                <el-collapse-item v-for="frameInfo in selectionInfos" :name="frameInfo.nodeId">
+                <el-collapse-item v-for="(frameInfo, idx) in selectionInfos" :name="frameInfo.nodeId">
                     <template #title>
                         {{ frameInfo.nodeName }}
                     </template>
@@ -252,8 +261,8 @@ onUpdated(() => {
                             <template #placeholder>Rendering...</template>
                             <template #error>Rendering...</template>
                         </el-image>
-                        <el-input type="textarea" rows="2" placeholder="Текстовые данные креатива"></el-input>
-                        <el-input type="textarea" rows="3" placeholder="Краткое описание изображения креатива"></el-input>
+                        <el-input v-model="commonCreativeFields.sharedCreativeText" type="textarea" rows="2" placeholder="Текстовые данные креатива"></el-input>
+                        <el-input v-model="commonCreativeFields.sharedCreativeDescription" type="textarea" rows="3" placeholder="Краткое описание изображения креатива"></el-input>
                     </div>
                 </el-collapse-item>
             </el-collapse>
