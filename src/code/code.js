@@ -9,8 +9,9 @@ figma.clientStorage.getAsync(figmaClientStorageKey).then((something) => {
     }
 });
 
+listenForAPIRequests();
+
 figma.on('selectionchange', informUIAboutSelection);
-informUIAboutSelection();
 
 figma.ui.onmessage = (msg) => {
     switch (msg.key) {
@@ -26,17 +27,20 @@ figma.ui.onmessage = (msg) => {
     }
 };
 
-listenForAPIRequests();
+informUIAboutSelection();
 
 //======================================================================================================================
 function informUIAboutSelection() {
     const currentSelection = Array.from(figma.currentPage.selection);
     if (currentSelection.length && currentSelection.every(node => node.type === 'FRAME')) {
-        const selectionInfos = currentSelection.map((frame) => {
+        const selectionInfos = currentSelection.map((node) => {
+            node.exportAsync({ format: 'JPG' }).then((rendered) => {
+                figma.ui.postMessage({ key: 'node-render-data-url', value: { nodeId: node.id, rendered } });
+            });
             return {
-                nodeId:              frame.id,
-                nodeName:            frame.name,
-                markerPlaceholderId: frame.findOne(n => n.name === '#marker')?.id,
+                nodeId:              node.id,
+                nodeName:            node.name,
+                markerPlaceholderId: node.findOne(n => n.name === '#marker')?.id,
             }
         });
         figma.ui.postMessage({ key: 'valid-selection', value: selectionInfos });

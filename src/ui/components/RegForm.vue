@@ -28,7 +28,8 @@ const commonCreativeFields = reactive({
     hasTargetLink: false,
     targetLinks: [''],
     sharedCreativeText: '',
-    sharedCreativeDescription: ''
+    sharedCreativeDescription: '',
+    creativeInfos: [],
 });
 const commonFieldsRules = reactive({
     title: [{ required: true, message: 'Придумайте назавнаие', trigger: 'blur' }],
@@ -44,6 +45,7 @@ const commonFieldsRules = reactive({
         message: 'Заполните все поля и/или удалите лишние',
         trigger: 'change'
     }],
+    sharedCreativeDescription: [{ required: true, message: 'Опишите креатив', trigger: 'blur' }],
 });
 const paymentTypes = [
     { type: 'PAYMENT_TYPE_CPM', label: 'CPM' },
@@ -72,7 +74,13 @@ watch(selectedContract, newSelectedContract => commonCreativeFields.externalCont
 watch(selectedOrganisation, newSelectedOrganisation => commonCreativeFields.externalOrganisationId = newSelectedOrganisation.externalOrganisationId);
 watch(selectedPaymentType, newPaymentType => commonCreativeFields.paymentType = newPaymentType.type);
 watch(selectedAdvObjectType, newValue => commonCreativeFields.advObjectType = newValue.type);
-watch(selectionInfos, (infos) => openedCreativeNodeId.value = infos[0].nodeId);
+watch(selectionInfos, (infos) => {
+    openedCreativeNodeId.value = infos[0].nodeId;
+    commonCreativeFields.creativeInfos = infos.map((info) => {
+        return { nodeId: info.nodeId, text: '', description: '', dataUrl: '' };
+    });
+    console.log('*** watching selectionInfos',  commonCreativeFields.creativeInfos);
+}, { immediate: true });
 
 
 async function fetchRefenceDatas() {
@@ -129,13 +137,33 @@ async function queryOKVEDRefence(query = '') {
     }
 }
 
-watch(apiKey, (val) => {
+watch(apiKey, () => {
     fetchRefenceDatas();
 });
 
 onMounted(() => {
     fetchRefenceDatas();
     parent.postMessage({ pluginMessage: { key:   'resize-ui', value: { height: document.documentElement.scrollHeight } } }, '*');
+
+    window.addEventListener('message', async ({ data: { pluginMessage: msg } }) => {
+        switch (msg.key) {
+            case 'node-render-data-url':
+                // console.log(msg.value);
+                const based64 = await new Promise(resolve => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.readAsDataURL(new Blob([msg.value.rendered]));
+                });
+                const dataUrl = 'data:image/jpeg;base64' + based64.slice(based64.indexOf(','));
+                // console.log(dataUrl);
+                const cInfo = find(commonCreativeFields.creativeInfos, { nodeId: msg.value.nodeId });
+                if (cInfo) {
+                    cInfo.dataUrl = dataUrl;
+                }
+                break;
+        }
+    });
+
 });
 
 onUpdated(() => {
@@ -244,35 +272,52 @@ onUpdated(() => {
                            @click="commonCreativeFields.targetLinks.splice(idx,1); regForm.validateField('targetLinks')"></el-button>
             </div>
         </el-form-item>
-        <el-form-item>
-            <template #label>
-                <el-space size="large" alignment="center">
-                    <el-text>Данные о креативе</el-text>
-                    <el-checkbox v-model="shareCreativeTexts">Одинаковое описание для всех креативов</el-checkbox>
-                </el-space>
-            </template>
-            <el-collapse v-model="openedCreativeNodeId" accordion style="flex: 1">
-                <el-collapse-item v-for="(frameInfo, idx) in selectionInfos" :name="frameInfo.nodeId">
-                    <template #title>
-                        {{ frameInfo.nodeName }}
-                    </template>
+        <el-space size="large" alignment="center">
+            <el-text>Данные о креативе</el-text>
+            <el-checkbox v-model="shareCreativeTexts">Одинаковое описание для всех креативов</el-checkbox>
+        </el-space>
+        <el-collapse v-model="openedCreativeNodeId" accordion style="flex: 1">
+            <el-collapse-item v-for="(frameInfo, idx) in selectionInfos" :name="frameInfo.nodeId">
+                <template #title>
+                    {{ frameInfo.nodeName }}
+                </template>
+                <el-form-item v-if="shareCreativeTexts" prop="sharedCreativeDescription">
                     <div class="creative-body">
-                        <el-image style="width: 150px;height: 150px;" fit="contain">
+                        <el-image style="width: 150px;height: 150px;" fit="contain" :src="commonCreativeFields.creativeInfos[idx].dataUrl">
                             <template #placeholder>Rendering...</template>
                             <template #error>Rendering...</template>
                         </el-image>
                         <el-input v-model="commonCreativeFields.sharedCreativeText" type="textarea" rows="2" placeholder="Текстовые данные креатива"></el-input>
                         <el-input v-model="commonCreativeFields.sharedCreativeDescription" type="textarea" rows="3" placeholder="Краткое описание изображения креатива"></el-input>
                     </div>
-                </el-collapse-item>
-            </el-collapse>
-        </el-form-item>
+                </el-form-item>
+                <el-form-item v-else
+                              :prop="'creativeInfos.' + idx"
+                              :rules="{
+                                type: 'object',
+                                fields: {
+                                    text: { required: false },
+                                    description: { required: true, trigger: 'blur' }
+                                }
+                              }">
+                    <div class="creative-body">
+                        <el-image style="width: 150px;height: 150px;" fit="contain">
+                            <template #placeholder>Rendering...</template>
+                            <template #error>Rendering...</template>
+                        </el-image>
+                        <el-input v-model="commonCreativeFields.creativeInfos[idx].text" type="textarea" rows="2" placeholder="Текстовые данные креатива"></el-input>
+                        <el-input v-model="commonCreativeFields.creativeInfos[idx].description" type="textarea" rows="3" placeholder="Краткое описание изображения креатива"></el-input>
+                    </div>
+                </el-form-item>
+            </el-collapse-item>
+        </el-collapse>
     </el-form>
 </template>
 
 <style scoped lang="less">
 
 .creative-body {
+    width: 100%;
     display: grid;
     grid-template-columns: 150px 1fr;
     .el-image {
