@@ -1,6 +1,6 @@
 <script setup>
 
-import { onMounted, reactive, ref, defineProps, watch, toRef, computed, onUpdated } from "vue";
+import { onMounted, reactive, ref, defineProps, watch, toRef, computed, onUpdated, onUnmounted } from "vue";
 import { callAPI } from "../../call-api";
 import { find, groupBy } from "lodash";
 import { Plus, Delete } from '@element-plus/icons-vue';
@@ -9,6 +9,7 @@ const props = defineProps(['apiKey', 'selectionInfos']);
 const apiKey = toRef(props, 'apiKey');
 const selectionInfos = toRef(props, 'selectionInfos');
 const openedCreativeNodeId = ref(selectionInfos.value[0].nodeId);
+const registrationInProgress = ref(false);
 
 const regForm = ref(null);
 
@@ -77,7 +78,7 @@ watch(selectedAdvObjectType, newValue => commonCreativeFields.advObjectType = ne
 watch(selectionInfos, (infos) => {
     openedCreativeNodeId.value = infos[0].nodeId;
     commonCreativeFields.creativeInfos = infos.map((info) => {
-        return { nodeId: info.nodeId, text: '', description: '', dataUrl: '' };
+        return { nodeId: info.nodeId, text: '', description: '', dataUrl: '', bytes: '', name: info.nodeName };
     });
     console.log('*** watching selectionInfos',  commonCreativeFields.creativeInfos);
 }, { immediate: true });
@@ -141,34 +142,46 @@ watch(apiKey, () => {
     fetchRefenceDatas();
 });
 
+async function windowMessageHandler({ data: { pluginMessage: msg } }) {
+    switch (msg.key) {
+        case 'node-render-data-url':
+            // console.log(msg.value);
+            const based64 = await new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(new Blob([msg.value.rendered]));
+            });
+            const dataUrl = 'data:image/png;base64' + based64.slice(based64.indexOf(','));
+            // console.log(dataUrl);
+            const cInfo = find(commonCreativeFields.creativeInfos, { nodeId: msg.value.nodeId });
+            if (cInfo) {
+                cInfo.bytes = msg.value.rendered;
+                cInfo.dataUrl = dataUrl;
+            }
+            break;
+    }
+}
+
 onMounted(() => {
     fetchRefenceDatas();
     parent.postMessage({ pluginMessage: { key:   'resize-ui', value: { height: document.documentElement.scrollHeight } } }, '*');
-
-    window.addEventListener('message', async ({ data: { pluginMessage: msg } }) => {
-        switch (msg.key) {
-            case 'node-render-data-url':
-                // console.log(msg.value);
-                const based64 = await new Promise(resolve => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.readAsDataURL(new Blob([msg.value.rendered]));
-                });
-                const dataUrl = 'data:image/jpeg;base64' + based64.slice(based64.indexOf(','));
-                // console.log(dataUrl);
-                const cInfo = find(commonCreativeFields.creativeInfos, { nodeId: msg.value.nodeId });
-                if (cInfo) {
-                    cInfo.dataUrl = dataUrl;
-                }
-                break;
-        }
-    });
-
+    window.addEventListener('message', windowMessageHandler);
+    parent.postMessage({ pluginMessage: { key: 'inform-about-selection' } }, '*');
+});
+onUnmounted(() => {
+    window.removeEventListener('message', windowMessageHandler);
 });
 
 onUpdated(() => {
     parent.postMessage({ pluginMessage: { key:   'resize-ui', value: { height: document.documentElement.scrollHeight } } }, '*');
 });
+
+async function letsRegister() {
+    try {
+        await regForm.value.validate();
+        registrationInProgress.value = true;
+    } catch (ex) {}
+}
 
 </script>
 
@@ -301,7 +314,7 @@ onUpdated(() => {
                                 }
                               }">
                     <div class="creative-body">
-                        <el-image style="width: 150px;height: 150px;" fit="contain">
+                        <el-image style="width: 150px;height: 150px;" fit="contain" :src="commonCreativeFields.creativeInfos[idx].dataUrl">
                             <template #placeholder>Rendering...</template>
                             <template #error>Rendering...</template>
                         </el-image>
@@ -311,7 +324,28 @@ onUpdated(() => {
                 </el-form-item>
             </el-collapse-item>
         </el-collapse>
+        <div class="submit-ctl">
+            <el-button plain type="primary" size="default"
+                       @click="letsRegister()">Зарегистрировать</el-button>
+        </div>
     </el-form>
+
+    <el-drawer v-model="registrationInProgress"
+               direction="btt" size="auto" append-to-body
+               :show-close="false" :close-on-click-modal="false" :close-on-press-escape="false">
+        <template #header>
+            <el-text>Регистрируем креатив...</el-text>
+        </template>
+        <el-divider content-position="left">Загрузка файлов</el-divider>
+        <el-space direction="vertical" alignment="stretch" style="width: 100%;">
+            <el-progress v-for="creative in commonCreativeFields.creativeInfos"
+                         :indeterminate="true" :percentage="100" :text-inside="true" :stroke-width="15" :duration="5"
+                         :format="() => creative.name" status="success"></el-progress>
+        </el-space>
+        <el-divider content-position="left">Отправка данных</el-divider>
+        <el-progress :indeterminate="false" :percentage="0" ></el-progress>
+    </el-drawer>
+
 </template>
 
 <style scoped lang="less">
@@ -319,9 +353,11 @@ onUpdated(() => {
 .creative-body {
     width: 100%;
     display: grid;
+    grid-gap: 0 15px;
     grid-template-columns: 150px 1fr;
     .el-image {
         grid-row: span 2;
+        filter: drop-shadow(0px 2px 2px fade(black, 50%));
     }
 }
 
@@ -346,6 +382,12 @@ onUpdated(() => {
     & + .target-url-input {
         margin-top: 10px;
     }
+}
+
+.submit-ctl {
+    display: flex;
+    justify-content: center;
+    padding-top: 1em;
 }
 
 </style>

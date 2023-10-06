@@ -12,6 +12,7 @@ figma.clientStorage.getAsync(figmaClientStorageKey).then((something) => {
 listenForAPIRequests();
 
 figma.on('selectionchange', informUIAboutSelection);
+figma.on('currentpagechange', informUIAboutSelection);
 
 figma.ui.onmessage = (msg) => {
     switch (msg.key) {
@@ -19,6 +20,9 @@ figma.ui.onmessage = (msg) => {
             figma.clientStorage.setAsync(figmaClientStorageKey, JSON.parse(msg.value)).then(() => {
                 console.log('+++ store-local-settings: stored: %o', msg.value)
             });
+            break;
+        case 'inform-about-selection':
+            informUIAboutSelection();
             break;
         case 'resize-ui':
             const { width = 600, height = 600 } = msg.value;
@@ -31,10 +35,10 @@ informUIAboutSelection();
 
 //======================================================================================================================
 function informUIAboutSelection() {
-    const currentSelection = Array.from(figma.currentPage.selection);
-    if (currentSelection.length && currentSelection.every(node => node.type === 'FRAME')) {
-        const selectionInfos = currentSelection.map((node) => {
-            node.exportAsync({ format: 'JPG' }).then((rendered) => {
+    // const currentSelection = Array.from(figma.currentPage.selection);
+    if (figma.currentPage.children.length > 0 && figma.currentPage.children.every(node => node.type === 'COMPONENT')) {
+        const selectionInfos = figma.currentPage.children.map((node) => {
+            node.exportAsync({ format: 'PNG' }).then((rendered) => {
                 figma.ui.postMessage({ key: 'node-render-data-url', value: { nodeId: node.id, rendered } });
             });
             return {

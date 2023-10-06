@@ -7,7 +7,7 @@ import MainIface from "./components/main-iface.vue";
 </template>
 
 <style lang="less">
-:root {
+html {
     //color-scheme: dark;
     font-family: Inter, sans-serif;
     padding: 0;
