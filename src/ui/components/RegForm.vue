@@ -4,6 +4,7 @@ import { onMounted, reactive, ref, defineProps, watch, toRef, computed, onUpdate
 import { callAPI } from "../../call-api";
 import { find, groupBy } from "lodash";
 import { Plus, Delete } from '@element-plus/icons-vue';
+import { api_endpoint_host } from "../../commons";
 
 const props = defineProps(['apiKey', 'selectionInfos']);
 const apiKey = toRef(props, 'apiKey');
@@ -180,6 +181,64 @@ async function letsRegister() {
     try {
         await regForm.value.validate();
         registrationInProgress.value = true;
+        // await Promise.all(commonCreativeFields.creativeInfos.map(creative => {
+        //     return new Promise(resolve => {
+        //         creative.progress = {
+        //             in_progress: true,
+        //             value: 100,
+        //             status: ''
+        //         };
+        //         const form_data = new FormData();
+        //         form_data.append('file', new Blob([creative.bytes]));
+        //         fetch(`${ api_endpoint_host }/api/external/file/media`, {
+        //             method: 'POST',
+        //             headers: { Authorization: `Bearer ${ apiKey.value }` },
+        //             body: form_data
+        //         }).then(response => {
+        //             response.json().then(json => {
+        //                 console.log("+++ /api/external/file/media: %o", json);
+        //                 creative.progress.in_progress = false;
+        //                 creative.progress.status = 'success';
+        //                 creative.ozonFileId = json.id;
+        //                 resolve(json.id);
+        //             });
+        //         });
+        //     });
+        // }));
+        const creativeRegData = {};
+        creativeRegData.externalCreativeId = '???';
+        if (commonCreativeFields.isSelfPromotion) {
+            creativeRegData.selfPromotionExternalOrganizationId = commonCreativeFields.externalOrganisationId;
+        } else {
+            creativeRegData.externalContractId = commonCreativeFields.externalContractId;
+        }
+        creativeRegData.advObjectType = commonCreativeFields.advObjectType;
+        creativeRegData.title = commonCreativeFields.title;
+        creativeRegData.description = commonCreativeFields.description;
+        // geoTargets ???
+        if (commonCreativeFields.isSocialAdv) creativeRegData.isSocialAdv = commonCreativeFields.isSocialAdv;
+        if (commonCreativeFields.isNative) creativeRegData.isNative = commonCreativeFields.isNative;
+        creativeRegData.mediaData = commonCreativeFields.creativeInfos.map(creative => {
+            return {
+                text: shareCreativeTexts.value ? commonCreativeFields.sharedCreativeText : creative.text,
+                description: shareCreativeTexts.value ? commonCreativeFields.sharedCreativeDescription : creative.description,
+                file: { id: creative.ozonFileId }
+            };
+        });
+        creativeRegData.okvedCodes = commonCreativeFields.okvedCodes;
+        creativeRegData.paymentType = commonCreativeFields.paymentType;
+        // targetLink
+        // urlList
+        if (commonCreativeFields.hasTargetLink) {
+            const links = Array.from(commonCreativeFields.targetLinks);
+            creativeRegData.targetLink = links.shift();
+            if (links.length > 0) {
+                creativeRegData.urlList = links.map(link => ({ url: link }));
+            }
+        }
+
+        console.log('+++ creativeRegData: %o', creativeRegData);
+
     } catch (ex) {}
 }
 
@@ -339,8 +398,12 @@ async function letsRegister() {
         <el-divider content-position="left">Загрузка файлов</el-divider>
         <el-space direction="vertical" alignment="stretch" style="width: 100%;">
             <el-progress v-for="creative in commonCreativeFields.creativeInfos"
-                         :indeterminate="true" :percentage="100" :text-inside="true" :stroke-width="15" :duration="5"
-                         :format="() => creative.name" status="success"></el-progress>
+                         :stroke-width="15" :duration="2"
+                         :indeterminate="creative.progress?.in_progress"
+                         :text-inside="creative.progress?.in_progress"
+                         :percentage="creative.progress?.value"
+                         :status="creative.progress?.status"
+                         :format="() => creative.name"></el-progress>
         </el-space>
         <el-divider content-position="left">Отправка данных</el-divider>
         <el-progress :indeterminate="false" :percentage="0" ></el-progress>

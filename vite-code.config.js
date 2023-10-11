@@ -3,7 +3,7 @@ import path from "path"
 
 export default defineConfig({
     build: {
-        // minify: false,
+        minify: false,
         emptyOutDir: true,
         rollupOptions: {
             input:  {

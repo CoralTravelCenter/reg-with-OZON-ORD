@@ -1,7 +1,7 @@
 import { v4 } from "uuid";
 
-const api_endpoint_host = 'http:/localhost:8010/proxy';
-// const api_endpoint_host = 'https:/ord.ozon.ru';
+import { api_endpoint_host } from "./commons";
+
 const request_message_key = 'api-request';
 const response_message_key = 'api-response';
 
