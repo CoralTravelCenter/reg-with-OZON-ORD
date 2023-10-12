@@ -6,11 +6,12 @@ import { find, groupBy } from "lodash";
 import { Plus, Delete } from '@element-plus/icons-vue';
 import { api_endpoint_host } from "../../commons";
 
-const props = defineProps(['apiKey', 'selectionInfos']);
+const props = defineProps(['apiKey', 'selectionInfos', 'figmaPageHref']);
 const apiKey = toRef(props, 'apiKey');
 const selectionInfos = toRef(props, 'selectionInfos');
 const openedCreativeNodeId = ref(selectionInfos.value[0].nodeId);
 const registrationInProgress = ref(false);
+const regFormDataProgress = reactive({ in_progress: false, value: 0, status: '' });
 
 const regForm = ref(null);
 
@@ -25,7 +26,7 @@ const commonCreativeFields = reactive({
     externalContractId: '',
     externalOrganisationId: '',
     okvedCodes: ['79.12'],
-    paymentType: '',
+    paymentType: 'PAYMENT_TYPE_OTHER',
     advObjectType: 'ADV_OBJECT_TYPE_BANNER',
     hasTargetLink: false,
     targetLinks: [''],
@@ -69,7 +70,7 @@ const advObjectTypes = [
 
 const selectedContract = ref({});
 const selectedOrganisation = ref({});
-const selectedPaymentType = ref({});
+const selectedPaymentType = ref(paymentTypes[3]);
 const selectedAdvObjectType = ref(advObjectTypes[0]);
 
 watch(selectedContract, newSelectedContract => commonCreativeFields.externalContractId = newSelectedContract.externalContractId);
@@ -181,32 +182,34 @@ async function letsRegister() {
     try {
         await regForm.value.validate();
         registrationInProgress.value = true;
-        // await Promise.all(commonCreativeFields.creativeInfos.map(creative => {
-        //     return new Promise(resolve => {
-        //         creative.progress = {
-        //             in_progress: true,
-        //             value: 100,
-        //             status: ''
-        //         };
-        //         const form_data = new FormData();
-        //         form_data.append('file', new Blob([creative.bytes]));
-        //         fetch(`${ api_endpoint_host }/api/external/file/media`, {
-        //             method: 'POST',
-        //             headers: { Authorization: `Bearer ${ apiKey.value }` },
-        //             body: form_data
-        //         }).then(response => {
-        //             response.json().then(json => {
-        //                 console.log("+++ /api/external/file/media: %o", json);
-        //                 creative.progress.in_progress = false;
-        //                 creative.progress.status = 'success';
-        //                 creative.ozonFileId = json.id;
-        //                 resolve(json.id);
-        //             });
-        //         });
-        //     });
-        // }));
+        await Promise.all(commonCreativeFields.creativeInfos.map(creative => {
+            return new Promise(resolve => {
+                creative.progress = {
+                    in_progress: true,
+                    value: 100,
+                    status: ''
+                };
+                const form_data = new FormData();
+                form_data.append('file', new Blob([creative.bytes]));
+                fetch(`${ api_endpoint_host }/api/external/file/media`, {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${ apiKey.value }` },
+                    body: form_data
+                }).then(response => {
+                    response.json().then(json => {
+                        console.log("+++ /api/external/file/media: %o", json);
+                        creative.progress.in_progress = false;
+                        creative.progress.status = 'success';
+                        creative.ozonFileId = json.id;
+                        resolve(json.id);
+                    });
+                });
+            });
+        }));
+
         const creativeRegData = {};
-        creativeRegData.externalCreativeId = '???';
+
+        creativeRegData.externalCreativeId = props.figmaPageHref;
         if (commonCreativeFields.isSelfPromotion) {
             creativeRegData.selfPromotionExternalOrganizationId = commonCreativeFields.externalOrganisationId;
         } else {
@@ -238,6 +241,14 @@ async function letsRegister() {
         }
 
         console.log('+++ creativeRegData: %o', creativeRegData);
+
+        regFormDataProgress.in_progress = true;
+        regFormDataProgress.value = 100;
+        const reg_response = await callAPI(apiKey.value, '/api/external/creative', 'POST', creativeRegData);
+        regFormDataProgress.in_progress = false;
+        regFormDataProgress.status = 'success';
+
+        console.log('+++ reg_response: %o', reg_response);
 
     } catch (ex) {}
 }
@@ -406,7 +417,9 @@ async function letsRegister() {
                          :format="() => creative.name"></el-progress>
         </el-space>
         <el-divider content-position="left">Отправка данных</el-divider>
-        <el-progress :indeterminate="false" :percentage="0" ></el-progress>
+        <el-progress :indeterminate="regFormDataProgress.in_progress"
+                     :percentage="regFormDataProgress.value"
+                     :status="regFormDataProgress.status"></el-progress>
     </el-drawer>
 
 </template>

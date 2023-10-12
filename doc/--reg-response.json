@@ -1,0 +1,52 @@
+{
+    "creative": {
+        "externalCreativeId": "https://www.figma.com/file/lsD8djF5Ux3XSokfkx4aQj/ORD?type=design&node-id=0-1&mode=design",
+        "externalContractId": "",
+        "title": "-- API TEST",
+        "hash": "0",
+        "okvedCodes": [
+            "79.12"
+        ],
+        "description": "общее описание",
+        "paymentType": "PAYMENT_TYPE_OTHER",
+        "advObjectType": "ADV_OBJECT_TYPE_BANNER",
+        "targetAudienceSettings": "",
+        "isSocialAdv": false,
+        "targetLink": "",
+        "mediaData": [
+            {
+                "text": "",
+                "file": {
+                    "id": "1252749",
+                    "url": "https://ord.ozon.ru/api/ord-api/content/media/ba1c83a7f973e7a11fff13d5d6e3c6c0bb6565be82f1037422975ef22868034f",
+                    "originalUrl": "",
+                    "description": "описание того что изображено на креативе"
+                },
+                "hash": "ba1c83a7f973e7a11fff13d5d6e3c6c0bb6565be82f1037422975ef22868034f",
+                "description": "описание того что изображено на креативе"
+            },
+            {
+                "text": "",
+                "file": {
+                    "id": "1252750",
+                    "url": "https://ord.ozon.ru/api/ord-api/content/media/cb8c8d849fe85b10dca7d4157e031aad2de770c3adc186696d446cb8456aacd8",
+                    "originalUrl": "",
+                    "description": "описание того что изображено на креативе"
+                },
+                "hash": "cb8c8d849fe85b10dca7d4157e031aad2de770c3adc186696d446cb8456aacd8",
+                "description": "описание того что изображено на креативе"
+            }
+        ],
+        "marker": "LjN8KGscF",
+        "urlList": [],
+        "geoTargets": [],
+        "createdAt": "2023-10-12T12:31:03.257876Z",
+        "editedAt": null,
+        "createdBy": null,
+        "editedBy": null,
+        "isNative": false,
+        "selfPromotionExternalOrganizationId": "73ead5c3-5481-4b83-816c-82da8f11b386",
+        "iabCategory": "",
+        "creativeId": "473540"
+    }
+}

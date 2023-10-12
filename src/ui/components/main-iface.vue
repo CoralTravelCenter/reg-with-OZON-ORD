@@ -18,6 +18,7 @@ const settingsDrawer = ref(null);
 
 const hasValidSelection = ref(false);
 const selectionInfos = ref([]);
+const figmaPageHref = ref('');
 
 let activeComponent = computed(() => {
     return hasValidSelection.value && selectedBrand().apiKey ? RegSelected : NoSuitableSelection;
@@ -30,11 +31,13 @@ onMounted(() => {
                 // console.log('+++ VALID SELECTION: %o', msg.value);
                 hasValidSelection.value = true;
                 selectionInfos.value = msg.value;
+                figmaPageHref.value = msg.figmaPageHref;
                 break;
             case 'invalid-selection':
                 // console.log('+++ INVALID SELECTION');
                 hasValidSelection.value = false;
                 selectionInfos.value = [];
+                figmaPageHref.value = '';
                 break;
             case 'sync-local-settings':
                 Object.assign(localSettings.settings, msg.value.settings);
@@ -86,7 +89,7 @@ const storeLocalSettigns = () => {
             </el-row>
         </el-header>
         <el-main>
-            <component :is="activeComponent" :api-key="selectedBrand().apiKey" :selection-infos="selectionInfos"></component>
+            <component :is="activeComponent" :api-key="selectedBrand().apiKey" :selection-infos="selectionInfos" :figma-page-href="figmaPageHref"></component>
         </el-main>
     </el-container>
 

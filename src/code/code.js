@@ -28,10 +28,6 @@ figma.ui.onmessage = (msg) => {
             const { width = 600, height = 600 } = msg.value;
             figma.ui.resize(width, height);
             break;
-        case 'get-current-page-href':
-            const page_href = `https://www.figma.com/file/${ figma.fileKey }/${ figma.root.name }?type=design&node-id=${ figma.currentPage.id.split(':').join('-') }&mode=design`;
-            figma.ui.postMessage({ key: 'current-page-href', value: page_href });
-            break;
     }
 };
 
@@ -51,7 +47,8 @@ function informUIAboutSelection() {
                 markerPlaceholderId: node.findOne(n => n.name === '#marker')?.id,
             }
         });
-        figma.ui.postMessage({ key: 'valid-selection', value: selectionInfos });
+        const page_href = `https://www.figma.com/file/${ figma.fileKey }/${ figma.root.name }?type=design&node-id=${ figma.currentPage.id.split(':').join('-') }&mode=design`;
+        figma.ui.postMessage({ key: 'valid-selection', value: selectionInfos, figmaPageHref: page_href});
     } else {
         figma.ui.postMessage({ key: 'invalid-selection' });
     }
