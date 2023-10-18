@@ -3,7 +3,7 @@
 import { onMounted, reactive, ref, defineProps, watch, toRef, computed, onUpdated, onUnmounted } from "vue";
 import { callAPI } from "../../call-api";
 import { find, groupBy } from "lodash";
-import { Plus, Delete } from '@element-plus/icons-vue';
+import { Plus, Delete, Link, WarningFilled } from '@element-plus/icons-vue';
 import { api_endpoint_host } from "../../commons";
 
 const props = defineProps(['apiKey', 'selectionInfos', 'figmaPageHref']);
@@ -256,6 +256,38 @@ async function letsRegister() {
 </script>
 
 <template>
+    <el-card class="reg-info">
+        <template #header>
+            <div class="reg-info-card-header">
+                <el-link :icon="Link" type="success">Зарегистрирован</el-link>
+                <el-popconfirm title="Are you sure?"
+                               width="200"
+                               hide-after="0"
+                               confirm-button-text="Absolutely!"
+                               confirm-button-type="warning"
+                               cancel-button-text="Not yet"
+                               :icon="WarningFilled">
+                    <template #reference>
+                        <el-button plain type="warning">Forget</el-button>
+                    </template>
+                </el-popconfirm>
+            </div>
+        </template>
+        <el-descriptions size="small" border>
+            <el-descriptions-item align="center">
+                <template #label>Маркер</template>
+                <el-text type="success">LKskdjksdaa</el-text>
+            </el-descriptions-item>
+            <el-descriptions-item align="center">
+                <template #label>Создан</template>
+                <el-text type="info">2023-10-29</el-text>
+            </el-descriptions-item>
+            <el-descriptions-item align="center">
+                <template #label>Изменен</template>
+                <el-text type="info">2023-10-30</el-text>
+            </el-descriptions-item>
+        </el-descriptions>
+    </el-card>
     <el-form ref="regForm"
              label-position="top" size="small" status-icon :model="commonCreativeFields"
              :rules="commonFieldsRules"
@@ -396,7 +428,7 @@ async function letsRegister() {
         </el-collapse>
         <div class="submit-ctl">
             <el-button plain type="primary" size="default"
-                       @click="letsRegister()">Зарегистрировать</el-button>
+                       @click="letsRegister">Зарегистрировать</el-button>
         </div>
     </el-form>
 
@@ -425,6 +457,17 @@ async function letsRegister() {
 </template>
 
 <style scoped lang="less">
+
+.el-card.reg-info {
+    :deep(.el-card__header) {
+        padding: calc(var(--el-card-padding) - 15px) calc(var(--el-card-padding) - 7px);
+    }
+}
+.reg-info-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
 .creative-body {
     width: 100%;
