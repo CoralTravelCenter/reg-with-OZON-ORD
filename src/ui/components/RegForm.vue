@@ -1,10 +1,11 @@
 <script setup>
 
-import { onMounted, reactive, ref, defineProps, watch, toRef, computed, onUpdated, onUnmounted } from "vue";
+import { onMounted, reactive, ref, defineProps, watch, toRef, computed, onUpdated, onUnmounted, inject, watchEffect } from "vue";
 import { callAPI } from "../../call-api";
 import { find, groupBy } from "lodash";
 import { Plus, Delete, Link, WarningFilled } from '@element-plus/icons-vue';
 import { api_endpoint_host } from "../../commons";
+import moment from 'moment';
 
 const props = defineProps(['apiKey', 'selectionInfos', 'figmaPageHref']);
 const apiKey = toRef(props, 'apiKey');
@@ -86,7 +87,8 @@ watch(selectionInfos, (infos) => {
 }, { immediate: true });
 
 
-async function fetchRefenceDatas() {
+async function
+fetchRefenceDatas() {
     const [{ contract: contracts_list }, { organisation: organisations_list }] = await Promise.all([
         callAPI(apiKey.value, '/api/external/contract/list', 'POST'),
         callAPI(apiKey.value, '/api/external/organisation/list', 'POST')
@@ -178,6 +180,33 @@ onUpdated(() => {
     parent.postMessage({ pluginMessage: { key:   'resize-ui', value: { height: document.documentElement.scrollHeight } } }, '*');
 });
 
+const { ozonCreativeData } = inject('ozon-creative-data');
+watch([ozonCreativeData, organisations, contracts], ([newOzonCreativeData, newOrganisations, newContracts]) => {
+    debugger;
+    commonCreativeFields.title = newOzonCreativeData?.title || '';
+    commonCreativeFields.description = newOzonCreativeData?.description || '';
+    commonCreativeFields.isSocialAdv = newOzonCreativeData?.isSocialAdv || false;
+    commonCreativeFields.isNative = newOzonCreativeData?.isNative || false;
+    commonCreativeFields.isSelfPromotion = !!(newOzonCreativeData?.selfPromotionExternalOrganizationId);
+    if (commonCreativeFields.isSelfPromotion) {
+        selectedOrganisation.value = find(newOrganisations, { externalOrganisationId: newOzonCreativeData?.selfPromotionExternalOrganizationId });
+    } else {
+        selectedContract.value = find(newContracts, { externalContractId: newOzonCreativeData?.externalContractId });
+    }
+    commonCreativeFields.okvedCodes = newOzonCreativeData?.okvedCodes || [];
+    selectedPaymentType.value = find(paymentTypes, { type: newOzonCreativeData?.paymentType });
+    selectedAdvObjectType.value = find(advObjectTypes, { type: newOzonCreativeData?.advObjectType });
+    //
+
+});
+
+const ozonCreative_createdAt = computed(() => {
+    return ozonCreativeData.value && moment(ozonCreativeData.value.createdAt).format('YYYY-MM-DD');
+});
+const ozonCreative_editedAt = computed(() => {
+    return ozonCreativeData.value && moment(ozonCreativeData.value.editedAt).format('YYYY-MM-DD');
+});
+
 async function letsRegister() {
     try {
         await regForm.value.validate();
@@ -256,10 +285,10 @@ async function letsRegister() {
 </script>
 
 <template>
-    <el-card class="reg-info">
+    <el-card v-if="ozonCreativeData" class="reg-info">
         <template #header>
             <div class="reg-info-card-header">
-                <el-link :icon="Link" type="success">Зарегистрирован</el-link>
+                <el-link :icon="Link" type="success" :href="`https://ord.ozon.ru/creatives/${ ozonCreativeData.creativeId }`">Зарегистрирован</el-link>
                 <el-popconfirm title="Are you sure?"
                                width="200"
                                hide-after="0"
@@ -276,15 +305,15 @@ async function letsRegister() {
         <el-descriptions size="small" border>
             <el-descriptions-item align="center">
                 <template #label>Маркер</template>
-                <el-text type="success">LKskdjksdaa</el-text>
+                <el-text type="success">{{ ozonCreativeData.marker }}</el-text>
             </el-descriptions-item>
             <el-descriptions-item align="center">
                 <template #label>Создан</template>
-                <el-text type="info">2023-10-29</el-text>
+                <el-text type="info">{{ ozonCreative_createdAt }}</el-text>
             </el-descriptions-item>
             <el-descriptions-item align="center">
                 <template #label>Изменен</template>
-                <el-text type="info">2023-10-30</el-text>
+                <el-text type="info">{{ ozonCreative_editedAt }}</el-text>
             </el-descriptions-item>
         </el-descriptions>
     </el-card>
@@ -427,8 +456,9 @@ async function letsRegister() {
             </el-collapse-item>
         </el-collapse>
         <div class="submit-ctl">
-            <el-button plain type="primary" size="default"
-                       @click="letsRegister">Зарегистрировать</el-button>
+            <el-button plain size="default"
+                       :type="ozonCreativeData ? 'warning' : 'primary'"
+                       @click="letsRegister">{{ ozonCreativeData ? 'Обновить' : 'Зарегистрировать' }}</el-button>
         </div>
     </el-form>
 
@@ -459,6 +489,7 @@ async function letsRegister() {
 <style scoped lang="less">
 
 .el-card.reg-info {
+    margin-bottom: 20px;
     :deep(.el-card__header) {
         padding: calc(var(--el-card-padding) - 15px) calc(var(--el-card-padding) - 7px);
     }

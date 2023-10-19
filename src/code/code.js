@@ -64,6 +64,10 @@ function getPagePluginData() {
     let pagePluginData;
     try {
         pagePluginData = JSON.parse(figma.currentPage.getPluginData(figmaPagePluginDataKey));
+        // pagePluginData = {
+            // externalCreativeId: 'https://www.figma.com/file/lsD8djF5Ux3XSokfkx4aQj/ORD?type=design&node-id=0-1&mode=design',
+            // externalCreativeId: 'ozon-auto-generated-uuid'
+        // };
     } catch (ex) {
     }
     return pagePluginData;

@@ -1,8 +1,9 @@
 <script setup>
-import { ref, watch, reactive, computed, onMounted } from 'vue';
+import { ref, watch, reactive, computed, onMounted, provide, watchEffect } from 'vue';
 import NoSuitableSelection from "./NoSuitableSelection.vue";
 import RegSelected from "./RegSelected.vue";
 import { Setting, WarningFilled, CircleCheckFilled } from "@element-plus/icons-vue";
+import { api_endpoint_host } from "../../commons";
 
 
 const localSettings = reactive({
@@ -19,6 +20,7 @@ const settingsDrawer = ref(null);
 const hasValidSelection = ref(false);
 const selectionInfos = ref([]);
 const figmaPageHref = ref('');
+const figmaPagePluginData = ref({});
 
 let activeComponent = computed(() => {
     return hasValidSelection.value && selectedBrand().apiKey ? RegSelected : NoSuitableSelection;
@@ -32,12 +34,14 @@ onMounted(() => {
                 hasValidSelection.value = true;
                 selectionInfos.value = msg.value;
                 figmaPageHref.value = msg.figmaPageHref;
+                figmaPagePluginData.value = msg.pagePluginData;
                 break;
             case 'invalid-selection':
                 // console.log('+++ INVALID SELECTION');
                 hasValidSelection.value = false;
                 selectionInfos.value = [];
                 figmaPageHref.value = '';
+                figmaPagePluginData.value = {};
                 break;
             case 'sync-local-settings':
                 Object.assign(localSettings.settings, msg.value.settings);
@@ -72,6 +76,34 @@ const storeLocalSettigns = () => {
     parent.postMessage({ pluginMessage: { key: 'store-local-settings', value: JSON.stringify(localSettings) } }, '*');
     settingsDrawerOpen.value = false;
 };
+
+const ozonCreativeData = ref(null);
+watchEffect(async () => {
+    const { externalCreativeId } = figmaPagePluginData.value || {};
+    if (externalCreativeId) {
+        try {
+            console.log('+++ watchEffect externalCreativeId: %o', externalCreativeId);
+            const api_response = await fetch(`${ api_endpoint_host }/api/external/creative/${ externalCreativeId }`, {
+                method: 'GET',
+                headers: { Authorization: `Bearer ${ selectedBrand().apiKey }` },
+            });
+            if (api_response.status === 200) {
+                const api_response_json = await api_response.json();
+                ozonCreativeData.value = { ...api_response_json.creative };
+                console.log('+++ watchEffect api_response: %o', api_response_json);
+            } else {
+                ozonCreativeData.value = null;
+            }
+        } catch (e) {
+            ozonCreativeData.value = null;
+        }
+    } else {
+        ozonCreativeData.value = null;
+    }
+});
+provide('ozon-creative-data', {
+    ozonCreativeData
+});
 
 </script>
 

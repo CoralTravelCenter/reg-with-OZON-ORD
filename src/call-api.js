@@ -37,7 +37,7 @@ export function callAPI(api_key, endpoint, method, request_body_json = {}, heade
     }
     return new Promise((resolve, reject) => {
         const request_id = v4();
-        promise_lut[request_id] = {resolve, reject}
+        promise_lut[request_id] = { resolve, reject };
         parent.postMessage({
             pluginMessage: {
                 key: request_message_key,
