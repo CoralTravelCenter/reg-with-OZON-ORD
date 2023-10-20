@@ -26,6 +26,8 @@ let activeComponent = computed(() => {
     return hasValidSelection.value && selectedBrand().apiKey ? RegSelected : NoSuitableSelection;
 });
 
+provide('selection-infos', { selectionInfos });
+
 onMounted(() => {
     window.addEventListener('message', ({ data: { pluginMessage: msg } }) => {
         switch (msg.key) {
@@ -55,10 +57,6 @@ onMounted(() => {
     });
     settingsDrawerOpen.value = !selectedBrand().apiKey;
 });
-
-// watch(localSettings, (v) => {
-//     console.log(v);
-// });
 
 const brandTabs = ref(null);
 
@@ -121,7 +119,7 @@ provide('ozon-creative-data', {
             </el-row>
         </el-header>
         <el-main>
-            <component :is="activeComponent" :api-key="selectedBrand().apiKey" :selection-infos="selectionInfos" :figma-page-href="figmaPageHref"></component>
+            <component :is="activeComponent" :api-key="selectedBrand().apiKey" :figma-page-href="figmaPageHref"></component>
         </el-main>
     </el-container>
 

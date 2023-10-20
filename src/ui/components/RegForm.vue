@@ -7,9 +7,9 @@ import { Plus, Delete, Link, WarningFilled } from '@element-plus/icons-vue';
 import { api_endpoint_host } from "../../commons";
 import moment from 'moment';
 
-const props = defineProps(['apiKey', 'selectionInfos', 'figmaPageHref']);
+const props = defineProps(['apiKey', 'figmaPageHref']);
 const apiKey = toRef(props, 'apiKey');
-const selectionInfos = toRef(props, 'selectionInfos');
+const { selectionInfos } = inject('selection-infos');
 const openedCreativeNodeId = ref(selectionInfos.value[0].nodeId);
 const registrationInProgress = ref(false);
 const regFormDataProgress = reactive({ in_progress: false, value: 0, status: '' });
