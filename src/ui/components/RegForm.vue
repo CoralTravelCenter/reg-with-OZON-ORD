@@ -7,7 +7,7 @@ import { Plus, Delete, Link, WarningFilled } from '@element-plus/icons-vue';
 import { api_endpoint_host } from "../../commons";
 import moment from 'moment';
 
-const props = defineProps(['apiKey', 'figmaPageHref']);
+const props = defineProps(['apiKey']);
 const apiKey = toRef(props, 'apiKey');
 const { selectionInfos } = inject('selection-infos');
 const openedCreativeNodeId = ref(selectionInfos.value[0].nodeId);
@@ -238,7 +238,8 @@ async function letsRegister() {
 
         const creativeRegData = {};
 
-        creativeRegData.externalCreativeId = props.figmaPageHref;
+        // creativeRegData.externalCreativeId = props.figmaPageHref;
+
         if (commonCreativeFields.isSelfPromotion) {
             creativeRegData.selfPromotionExternalOrganizationId = commonCreativeFields.externalOrganisationId;
         } else {

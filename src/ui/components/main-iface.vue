@@ -27,6 +27,7 @@ let activeComponent = computed(() => {
 });
 
 provide('selection-infos', { selectionInfos });
+provide('figma-page-href', { figmaPageHref });
 
 onMounted(() => {
     window.addEventListener('message', ({ data: { pluginMessage: msg } }) => {
@@ -119,7 +120,7 @@ provide('ozon-creative-data', {
             </el-row>
         </el-header>
         <el-main>
-            <component :is="activeComponent" :api-key="selectedBrand().apiKey" :figma-page-href="figmaPageHref"></component>
+            <component :is="activeComponent" :api-key="selectedBrand().apiKey"></component>
         </el-main>
     </el-container>
 
