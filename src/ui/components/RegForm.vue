@@ -196,8 +196,14 @@ watch([ozonCreativeData, organisations, contracts], ([newOzonCreativeData, newOr
     commonCreativeFields.okvedCodes = newOzonCreativeData?.okvedCodes || [];
     selectedPaymentType.value = find(paymentTypes, { type: newOzonCreativeData?.paymentType });
     selectedAdvObjectType.value = find(advObjectTypes, { type: newOzonCreativeData?.advObjectType });
-    //
-
+    // urlList
+    if (newOzonCreativeData?.urlList?.length > 0) {
+        commonCreativeFields.hasTargetLink = true;
+        commonCreativeFields.targetLinks = newOzonCreativeData.urlList.map(link => link.url);
+    } else {
+        commonCreativeFields.hasTargetLink = false;
+        commonCreativeFields.targetLinks = [];
+    }
 });
 
 const ozonCreative_createdAt = computed(() => {
@@ -264,7 +270,7 @@ async function letsRegister() {
         // urlList
         if (commonCreativeFields.hasTargetLink) {
             const links = Array.from(commonCreativeFields.targetLinks);
-            creativeRegData.targetLink = links.shift();
+            // creativeRegData.targetLink = links.shift();
             if (links.length > 0) {
                 creativeRegData.urlList = links.map(link => ({ url: link }));
             }
