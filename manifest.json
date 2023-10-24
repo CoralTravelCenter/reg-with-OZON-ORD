@@ -9,8 +9,8 @@
     "enableProposedApi": false,
     "enablePrivatePluginApi": true,
     "networkAccess": {
-        "allowedDomains": ["https://ord.ozon.ru"],
-        "devAllowedDomains": ["http://localhost:8010"]
+        "allowedDomains": ["https://touroperator.coral.ru", "https://ord.ozon.ru"],
+        "devAllowedDomains": ["https://touroperator.coral.ru", "http://localhost:8010"]
     },
     "main": "dist/src/code/code.js",
     "ui": "dist/src/ui/ui.html"
