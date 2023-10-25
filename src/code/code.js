@@ -37,7 +37,6 @@ informUIAboutSelection();
 function informUIAboutSelection() {
     // const currentSelection = Array.from(figma.currentPage.selection);
     if (figma.currentPage.children.length > 0 && figma.currentPage.children.every(node => node.type === 'COMPONENT')) {
-        const ozonCreativeData = getPagePluginData();
         const selectionInfos = figma.currentPage.children.map((node) => {
             node.exportAsync({ format: 'PNG' }).then((rendered) => {
                 figma.ui.postMessage({ key: 'node-render-data-url', value: { nodeId: node.id, rendered } });
