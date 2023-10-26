@@ -16,7 +16,7 @@ const regFormDataProgress = reactive({ in_progress: false, value: 0, status: '' 
 
 const regForm = ref(null);
 
-const shareCreativeTexts = ref(true);
+const shareCreativeDescriptions = ref(true);
 
 const commonCreativeFields = reactive({
     title: '',
@@ -31,7 +31,6 @@ const commonCreativeFields = reactive({
     advObjectType: 'ADV_OBJECT_TYPE_BANNER',
     hasTargetLink: false,
     targetLinks: [''],
-    sharedCreativeText: '',
     sharedCreativeDescription: '',
     creativeInfos: [],
 });
@@ -81,7 +80,7 @@ watch(selectedAdvObjectType, newValue => commonCreativeFields.advObjectType = ne
 watch(selectionInfos, (infos) => {
     openedCreativeNodeId.value = infos[0].nodeId;
     commonCreativeFields.creativeInfos = infos.map((info) => {
-        return { nodeId: info.nodeId, text: '', description: '', dataUrl: '', bytes: '', name: info.nodeName };
+        return { nodeId: info.nodeId, description: '', dataUrl: '', bytes: '', name: info.nodeName };
     });
     console.log('*** watching selectionInfos',  commonCreativeFields.creativeInfos);
 }, { immediate: true });
@@ -259,8 +258,7 @@ async function letsRegister() {
         if (commonCreativeFields.isNative) creativeRegData.isNative = commonCreativeFields.isNative;
         creativeRegData.mediaData = commonCreativeFields.creativeInfos.map(creative => {
             return {
-                text: shareCreativeTexts.value ? commonCreativeFields.sharedCreativeText : creative.text,
-                description: shareCreativeTexts.value ? commonCreativeFields.sharedCreativeDescription : creative.description,
+                description: shareCreativeDescriptions.value ? commonCreativeFields.sharedCreativeDescription : creative.description,
                 file: { id: creative.ozonFileId }
             };
         });
@@ -425,20 +423,19 @@ async function letsRegister() {
         </el-form-item>
         <el-space size="large" alignment="center">
             <el-text>Данные о креативе</el-text>
-            <el-checkbox v-model="shareCreativeTexts">Одинаковое описание для всех креативов</el-checkbox>
+            <el-checkbox v-model="shareCreativeDescriptions">Одинаковое описание для всех креативов</el-checkbox>
         </el-space>
-        <el-collapse v-model="openedCreativeNodeId" accordion style="flex: 1">
+        <el-collapse class="creative-files" v-model="openedCreativeNodeId" accordion style="flex: 1">
             <el-collapse-item v-for="(frameInfo, idx) in selectionInfos" :name="frameInfo.nodeId">
                 <template #title>
                     {{ frameInfo.nodeName }}
                 </template>
-                <el-form-item v-if="shareCreativeTexts" prop="sharedCreativeDescription">
+                <el-form-item v-if="shareCreativeDescriptions" prop="sharedCreativeDescription">
                     <div class="creative-body">
-                        <el-image style="width: 150px;height: 150px;" fit="contain" :src="commonCreativeFields.creativeInfos[idx].dataUrl">
+                        <el-image style="width: 150px; max-height: 150px;" fit="contain" :src="commonCreativeFields.creativeInfos[idx].dataUrl">
                             <template #placeholder>Rendering...</template>
                             <template #error>Rendering...</template>
                         </el-image>
-                        <el-input v-model="commonCreativeFields.sharedCreativeText" type="textarea" rows="2" placeholder="Текстовые данные креатива"></el-input>
                         <el-input v-model="commonCreativeFields.sharedCreativeDescription" type="textarea" rows="3" placeholder="Краткое описание изображения креатива"></el-input>
                     </div>
                 </el-form-item>
@@ -452,11 +449,10 @@ async function letsRegister() {
                                 }
                               }">
                     <div class="creative-body">
-                        <el-image style="width: 150px;height: 150px;" fit="contain" :src="commonCreativeFields.creativeInfos[idx].dataUrl">
+                        <el-image style="width: 150px; max-height: 150px;" fit="contain" :src="commonCreativeFields.creativeInfos[idx].dataUrl">
                             <template #placeholder>Rendering...</template>
                             <template #error>Rendering...</template>
                         </el-image>
-                        <el-input v-model="commonCreativeFields.creativeInfos[idx].text" type="textarea" rows="2" placeholder="Текстовые данные креатива"></el-input>
                         <el-input v-model="commonCreativeFields.creativeInfos[idx].description" type="textarea" rows="3" placeholder="Краткое описание изображения креатива"></el-input>
                     </div>
                 </el-form-item>
@@ -494,6 +490,12 @@ async function letsRegister() {
 </template>
 
 <style scoped lang="less">
+
+.el-collapse.creative-files {
+    :deep(.el-collapse-item__content) {
+        padding-bottom: 0;
+    }
+}
 
 .el-card.reg-info {
     margin-bottom: 20px;
