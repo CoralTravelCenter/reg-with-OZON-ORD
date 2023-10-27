@@ -1,4 +1,4 @@
-import { figmaClientStorageKey, figmaPagePluginDataKey } from "../commons";
+import { figmaClientStorageKey, figmaComponentPluginDataKey, figmaPagePluginDataKey } from "../commons";
 import { listenForAPIRequests } from "../call-api";
 
 figma.showUI(__html__, { width: 600, height: 600 });
@@ -42,10 +42,11 @@ function informUIAboutSelection() {
                 figma.ui.postMessage({ key: 'node-render-data-url', value: { nodeId: node.id, rendered } });
             });
             return {
-                nodeId:              node.id,
-                nodeName:            node.name,
+                nodeId: node.id,
+                nodeName: node.name,
                 markerPlaceholderId: node.findOne(n => n.name === '#marker')?.id,
-            }
+                pluginData: node.getPluginData(figmaComponentPluginDataKey)
+            };
         });
         const page_href = `https://www.figma.com/file/${ figma.fileKey }/${ figma.root.name }?type=design&node-id=${ figma.currentPage.id.split(':').join('-') }&mode=design`;
         figma.ui.postMessage({

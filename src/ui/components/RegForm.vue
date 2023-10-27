@@ -79,10 +79,10 @@ watch(selectedPaymentType, newPaymentType => commonCreativeFields.paymentType = 
 watch(selectedAdvObjectType, newValue => commonCreativeFields.advObjectType = newValue.type);
 watch(selectionInfos, (infos) => {
     openedCreativeNodeId.value = infos[0].nodeId;
-    commonCreativeFields.creativeInfos = infos.map((info) => {
-        return { nodeId: info.nodeId, description: '', dataUrl: '', bytes: '', name: info.nodeName };
+    commonCreativeFields.creativeInfos = infos.map(info => {
+        return { nodeId: info.nodeId, description: '', dataUrl: '', bytes: '', name: info.nodeName, pluginData: JSON.parse(info.pluginData || '{}') };
     });
-    console.log('*** watching selectionInfos',  commonCreativeFields.creativeInfos);
+    console.log('*** watching selectionInfos: creativeInfos: %o',  commonCreativeFields.creativeInfos);
 }, { immediate: true });
 
 
@@ -167,7 +167,7 @@ async function windowMessageHandler({ data: { pluginMessage: msg } }) {
 
 onMounted(() => {
     fetchRefenceDatas();
-    parent.postMessage({ pluginMessage: { key:   'resize-ui', value: { height: document.documentElement.scrollHeight } } }, '*');
+    parent.postMessage({ pluginMessage: { key: 'resize-ui', value: { height: document.documentElement.scrollHeight } } }, '*');
     window.addEventListener('message', windowMessageHandler);
     parent.postMessage({ pluginMessage: { key: 'inform-about-selection' } }, '*');
 });
@@ -176,12 +176,11 @@ onUnmounted(() => {
 });
 
 onUpdated(() => {
-    parent.postMessage({ pluginMessage: { key:   'resize-ui', value: { height: document.documentElement.scrollHeight } } }, '*');
+    parent.postMessage({ pluginMessage: { key: 'resize-ui', value: { height: document.documentElement.scrollHeight } } }, '*');
 });
 
 const { ozonCreativeData } = inject('ozon-creative-data');
 watch([ozonCreativeData, organisations, contracts], ([newOzonCreativeData, newOrganisations, newContracts]) => {
-    debugger;
     commonCreativeFields.title = newOzonCreativeData?.title || '';
     commonCreativeFields.description = newOzonCreativeData?.description || '';
     commonCreativeFields.isSocialAdv = newOzonCreativeData?.isSocialAdv || false;
@@ -203,6 +202,16 @@ watch([ozonCreativeData, organisations, contracts], ([newOzonCreativeData, newOr
         commonCreativeFields.hasTargetLink = false;
         commonCreativeFields.targetLinks = [];
     }
+    // mediaData
+    // crativeInfo: { nodeId, description, dataUrl, bytes, name, pluginData: { ozonFileId } }
+    const all_creatives_were_registered = commonCreativeFields.creativeInfos.every(info => {
+        return !!newOzonCreativeData.mediaData.find(media => media.file.id === info.pluginData.ozonFileId);
+    });
+    const media_descriptions = newOzonCreativeData.mediaData.map(media => media.description);
+    const all_media_descriptions_are_the_same = new Set(media_descriptions).size === 1;
+    // commonCreativeFields.sharedCreativeDescription = all_media_descriptions_are_the_same;
+
+
 });
 
 const ozonCreative_createdAt = computed(() => {
