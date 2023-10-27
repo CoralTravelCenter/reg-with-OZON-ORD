@@ -209,7 +209,11 @@ watch([ozonCreativeData, organisations, contracts], ([newOzonCreativeData, newOr
     });
     const media_descriptions = newOzonCreativeData.mediaData.map(media => media.description);
     const all_media_descriptions_are_the_same = new Set(media_descriptions).size === 1;
-    // commonCreativeFields.sharedCreativeDescription = all_media_descriptions_are_the_same;
+    if (all_media_descriptions_are_the_same) {
+        commonCreativeFields.sharedCreativeDescription = newOzonCreativeData.mediaData[0].file.description;
+    } else {
+        commonCreativeFields.sharedCreativeDescription = '';
+    }
 
 
 });
