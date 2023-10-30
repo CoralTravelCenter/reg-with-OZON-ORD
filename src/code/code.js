@@ -28,15 +28,43 @@ figma.ui.onmessage = (msg) => {
             const { width = 600, height = 600 } = msg.value;
             figma.ui.resize(width, height);
             break;
+        case 'store-page-plugin-data':
+            const plugin_data = typeof msg.value === 'string' ? msg.value : JSON.stringify(msg.value);
+            figma.currentPage.setPluginData(figmaPagePluginDataKey, plugin_data);
+            break;
+        case 'store-node-plugin-data':
+            const { nodeId, pluginData } = typeof msg.value === 'object' ? msg.value : JSON.parse(msg.value);
+            const node = figma.getNodeById(nodeId);
+            node.setPluginData(figmaComponentPluginDataKey, typeof pluginData === 'string' ? pluginData : JSON.stringify(pluginData));
+            node.setPluginData('figma-node-id', node.id);
+            break;
+        case 'forget-registration':
+            figma.currentPage.children.forEach(node => {
+                node.setPluginData(figmaComponentPluginDataKey, '');
+                node.setPluginData('figma-node-id', '');
+            });
+            figma.currentPage.setPluginData(figmaPagePluginDataKey, '');
+            informUIAboutSelection();
+            break;
     }
 };
 
 informUIAboutSelection();
 
 //======================================================================================================================
+function trackNodesPluginData() {
+    figma.currentPage.children.forEach(node => {
+        const trackedNodeId = node.getPluginData('figma-node-id');
+        if (node.id !== trackedNodeId) {
+            node.setPluginData(figmaComponentPluginDataKey, '');
+        }
+    });
+}
+
 function informUIAboutSelection() {
     // const currentSelection = Array.from(figma.currentPage.selection);
     if (figma.currentPage.children.length > 0 && figma.currentPage.children.every(node => node.type === 'COMPONENT')) {
+        trackNodesPluginData();
         const selectionInfos = figma.currentPage.children.map((node) => {
             node.exportAsync({ format: 'PNG' }).then((rendered) => {
                 figma.ui.postMessage({ key: 'node-render-data-url', value: { nodeId: node.id, rendered } });

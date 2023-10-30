@@ -4,7 +4,7 @@ import { onMounted, reactive, ref, defineProps, watch, toRef, computed, onUpdate
 import { callAPI } from "../../call-api";
 import { find, groupBy } from "lodash";
 import { Plus, Delete, Link, WarningFilled } from '@element-plus/icons-vue';
-import { api_endpoint_host } from "../../commons";
+import { api_endpoint_host, figmaComponentPluginDataKey } from "../../commons";
 import moment from 'moment';
 
 const props = defineProps(['apiKey']);
@@ -44,7 +44,7 @@ const commonFieldsRules = reactive({
     targetLinks: [{
         required: true,
         type:     'array',
-        defaultField: { type: 'string', required: true, message: 'Заполните все поля и/или удалите лишние',  trigger: 'change' },
+        defaultField: { type: 'url', required: true, message: 'Заполните все поля и/или удалите лишние',  trigger: 'change' },
         message: 'Заполните все поля и/или удалите лишние',
         trigger: 'change'
     }],
@@ -68,6 +68,9 @@ const advObjectTypes = [
     { type: 'ADV_OBJECT_TYPE_OTHER', label: 'Другая' },
 ];
 
+const unregisteredCreativeInfos = computed(() => {
+    return commonCreativeFields.creativeInfos.filter(info => !info.pluginData?.ozonFileId);
+});
 const selectedContract = ref({});
 const selectedOrganisation = ref({});
 const selectedPaymentType = ref(paymentTypes[3]);
@@ -200,7 +203,7 @@ watch([ozonCreativeData, organisations, contracts], ([newOzonCreativeData, newOr
         commonCreativeFields.targetLinks = newOzonCreativeData.urlList.map(link => link.url);
     } else {
         commonCreativeFields.hasTargetLink = false;
-        commonCreativeFields.targetLinks = [];
+        commonCreativeFields.targetLinks = [''];
     }
     // mediaData
     // crativeInfo: { nodeId, description, dataUrl, bytes, name, pluginData: { ozonFileId } }
@@ -235,7 +238,8 @@ async function letsRegister() {
     try {
         await regForm.value.validate();
         registrationInProgress.value = true;
-        await Promise.all(commonCreativeFields.creativeInfos.map(creative => {
+        console.log('+++ unregisteredCreativeInfos: %o', unregisteredCreativeInfos.value);
+        await Promise.all(unregisteredCreativeInfos.value.map(creative => {
             return new Promise(resolve => {
                 creative.progress = {
                     in_progress: true,
@@ -254,6 +258,14 @@ async function letsRegister() {
                         creative.progress.in_progress = false;
                         creative.progress.status = 'success';
                         creative.ozonFileId = json.id;
+                        parent.postMessage({
+                            pluginMessage: {
+                                key:   'store-node-plugin-data',
+                                value: {
+                                    nodeId: creative.nodeId,
+                                    pluginData: { ozonFileId: json.id }
+                                },
+                            }}, '*')
                         resolve(json.id);
                     });
                 });
@@ -262,7 +274,7 @@ async function letsRegister() {
 
         const creativeRegData = {};
 
-        // creativeRegData.externalCreativeId = props.figmaPageHref;
+        if (ozonCreativeData.value?.externalCreativeId) creativeRegData.externalCreativeId = ozonCreativeData.value?.externalCreativeId;
 
         if (commonCreativeFields.isSelfPromotion) {
             creativeRegData.selfPromotionExternalOrganizationId = commonCreativeFields.externalOrganisationId;
@@ -278,18 +290,25 @@ async function letsRegister() {
         creativeRegData.mediaData = commonCreativeFields.creativeInfos.map(creative => {
             return {
                 description: shareCreativeDescriptions.value ? commonCreativeFields.sharedCreativeDescription : creative.description,
-                file: { id: creative.ozonFileId }
+                file:        { id: creative.ozonFileId || creative.pluginData.ozonFileId }
             };
-        });
+        }).concat(ozonCreativeData.value?.mediaData?.filter(media => {
+            if (media.file) {
+                return !commonCreativeFields.creativeInfos.find(info => info.pluginData?.ozonFileId === media.file.id);
+            } else {
+                return true;
+            }
+        }) || []);
         creativeRegData.okvedCodes = commonCreativeFields.okvedCodes;
         creativeRegData.paymentType = commonCreativeFields.paymentType;
-        // targetLink
         // urlList
         if (commonCreativeFields.hasTargetLink) {
             const links = Array.from(commonCreativeFields.targetLinks);
-            // creativeRegData.targetLink = links.shift();
             if (links.length > 0) {
-                creativeRegData.urlList = links.map(link => ({ url: link }));
+                creativeRegData.urlList = links.map(link => {
+                    if (!link.match(/^https?:\/\//i)) link = `https://${ link }`;
+                    return { url: link };
+                });
             }
         }
 
@@ -303,7 +322,22 @@ async function letsRegister() {
 
         console.log('+++ reg_response: %o', reg_response);
 
+        const { creative: { externalCreativeId: apiAssignedExternalCreativeId } } = reg_response;
+        parent.postMessage({
+            pluginMessage: {
+                key:   'store-page-plugin-data',
+                value: { externalCreativeId: apiAssignedExternalCreativeId }
+            }
+        }, '*');
+
+        registrationInProgress.value = false;
+        parent.postMessage({ pluginMessage: { key: 'inform-about-selection'} }, '*');
+
     } catch (ex) {}
+}
+
+function forgetRegistration() {
+    parent.postMessage({pluginMessage: { key: 'forget-registration' }}, '*');
 }
 
 </script>
@@ -319,7 +353,7 @@ async function letsRegister() {
                                confirm-button-text="Absolutely!"
                                confirm-button-type="warning"
                                cancel-button-text="Not yet"
-                               :icon="WarningFilled">
+                               :icon="WarningFilled" @confirm="forgetRegistration">
                     <template #reference>
                         <el-button plain type="warning">Forget</el-button>
                     </template>
@@ -490,9 +524,9 @@ async function letsRegister() {
         <template #header>
             <el-text>Регистрируем креатив...</el-text>
         </template>
-        <el-divider content-position="left">Загрузка файлов</el-divider>
+        <el-divider v-if="unregisteredCreativeInfos.length" content-position="left">Загрузка файлов</el-divider>
         <el-space direction="vertical" alignment="stretch" style="width: 100%;">
-            <el-progress v-for="creative in commonCreativeFields.creativeInfos"
+            <el-progress v-for="creative in unregisteredCreativeInfos"
                          :stroke-width="15" :duration="2"
                          :indeterminate="creative.progress?.in_progress"
                          :text-inside="creative.progress?.in_progress"
