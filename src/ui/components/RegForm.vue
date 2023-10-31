@@ -6,6 +6,7 @@ import { find, groupBy } from "lodash";
 import { Plus, Delete, Link, WarningFilled } from '@element-plus/icons-vue';
 import { api_endpoint_host, figmaComponentPluginDataKey } from "../../commons";
 import moment from 'moment';
+import { v4 } from "uuid";
 
 const props = defineProps(['apiKey']);
 const apiKey = toRef(props, 'apiKey');
@@ -279,7 +280,8 @@ async function letsRegister() {
 
         const creativeRegData = {};
 
-        if (ozonCreativeData.value?.externalCreativeId) creativeRegData.externalCreativeId = ozonCreativeData.value?.externalCreativeId;
+        // if (ozonCreativeData.value?.externalCreativeId)
+        creativeRegData.externalCreativeId = ozonCreativeData.value?.externalCreativeId || v4();
 
         if (commonCreativeFields.isSelfPromotion) {
             creativeRegData.selfPromotionExternalOrganizationId = commonCreativeFields.externalOrganisationId;
