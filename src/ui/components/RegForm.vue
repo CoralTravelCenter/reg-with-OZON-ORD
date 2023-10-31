@@ -76,7 +76,7 @@ const selectedOrganisation = ref({});
 const selectedPaymentType = ref(paymentTypes[3]);
 const selectedAdvObjectType = ref(advObjectTypes[0]);
 
-watch(selectedContract, newSelectedContract => commonCreativeFields.externalContractId = newSelectedContract.externalContractId);
+watch(selectedContract, newSelectedContract => commonCreativeFields.externalContractId = newSelectedContract?.externalContractId);
 watch(selectedOrganisation, newSelectedOrganisation => commonCreativeFields.externalOrganisationId = newSelectedOrganisation.externalOrganisationId);
 watch(selectedPaymentType, newPaymentType => commonCreativeFields.paymentType = newPaymentType.type);
 watch(selectedAdvObjectType, newValue => commonCreativeFields.advObjectType = newValue.type);
@@ -183,17 +183,23 @@ onUpdated(() => {
 });
 
 const { ozonCreativeData } = inject('ozon-creative-data');
-watch([ozonCreativeData, organisations, contracts], ([newOzonCreativeData, newOrganisations, newContracts]) => {
+watch(organisations, (newOrganisations) => {
+    if (commonCreativeFields.isSelfPromotion) {
+        selectedOrganisation.value = find(newOrganisations, { externalOrganisationId: ozonCreativeData.value?.selfPromotionExternalOrganizationId });
+    }
+});
+watch(contracts, (newContracts) => {
+    if (!commonCreativeFields.isSelfPromotion) {
+        selectedContract.value = find(newContracts, { externalContractId: ozonCreativeData.value?.externalContractId });
+    }
+});
+watch(ozonCreativeData, (newOzonCreativeData) => {
     commonCreativeFields.title = newOzonCreativeData?.title || '';
     commonCreativeFields.description = newOzonCreativeData?.description || '';
     commonCreativeFields.isSocialAdv = newOzonCreativeData?.isSocialAdv || false;
     commonCreativeFields.isNative = newOzonCreativeData?.isNative || false;
     commonCreativeFields.isSelfPromotion = !!(newOzonCreativeData?.selfPromotionExternalOrganizationId);
-    if (commonCreativeFields.isSelfPromotion) {
-        selectedOrganisation.value = find(newOrganisations, { externalOrganisationId: newOzonCreativeData?.selfPromotionExternalOrganizationId });
-    } else {
-        selectedContract.value = find(newContracts, { externalContractId: newOzonCreativeData?.externalContractId });
-    }
+
     commonCreativeFields.okvedCodes = newOzonCreativeData?.okvedCodes || [];
     selectedPaymentType.value = find(paymentTypes, { type: newOzonCreativeData?.paymentType });
     selectedAdvObjectType.value = find(advObjectTypes, { type: newOzonCreativeData?.advObjectType });
@@ -208,22 +214,21 @@ watch([ozonCreativeData, organisations, contracts], ([newOzonCreativeData, newOr
     // mediaData
     // crativeInfo: { nodeId, description, dataUrl, bytes, name, pluginData: { ozonFileId } }
     const all_creatives_were_registered = commonCreativeFields.creativeInfos.every(info => {
-        return !!newOzonCreativeData.mediaData.find(media => media.file.id === info.pluginData.ozonFileId);
+        return !!newOzonCreativeData?.mediaData.find(media => media.file.id === info.pluginData.ozonFileId);
     });
-    const media_descriptions = newOzonCreativeData.mediaData.map(media => media.description);
+    const media_descriptions = newOzonCreativeData?.mediaData.map(media => media.description);
     const all_media_descriptions_are_the_same = new Set(media_descriptions).size === 1;
     if (all_media_descriptions_are_the_same) {
-        commonCreativeFields.sharedCreativeDescription = newOzonCreativeData.mediaData[0].file.description;
+        commonCreativeFields.sharedCreativeDescription = newOzonCreativeData?.mediaData[0].file.description;
         shareCreativeDescriptions.value = true;
     } else {
         commonCreativeFields.sharedCreativeDescription = '';
         shareCreativeDescriptions.value = false;
         commonCreativeFields.creativeInfos.forEach(info => {
-            const media = newOzonCreativeData.mediaData.find(media => media.file.id === info.pluginData.ozonFileId);
+            const media = newOzonCreativeData?.mediaData.find(media => media.file.id === info.pluginData.ozonFileId);
             if (media) info.description = media.description;
         });
     }
-
 
 });
 
