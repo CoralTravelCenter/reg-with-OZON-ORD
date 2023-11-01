@@ -42,7 +42,8 @@ figma.ui.onmessage = (msg) => {
         case 'store-node-plugin-data':
             const { nodeId, pluginData } = typeof msg.value === 'object' ? msg.value : JSON.parse(msg.value);
             setNodeMediaData(nodeId, pluginData);
-            node.setPluginData('figma-node-id', node.id);
+            const node = figma.getNodeById(nodeId);
+            node && node.setPluginData('figma-node-id', node.id);
             break;
         case 'store-node-plugin-data-with-predicate':
             const { lookupPrdicate, data2set } = typeof msg.value === 'object' ? msg.value : JSON.parse(msg.value);
