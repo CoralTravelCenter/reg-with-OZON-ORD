@@ -329,7 +329,14 @@ async function letsRegister() {
 
         console.log('+++ reg_response: %o', reg_response);
 
-        const { creative: { externalCreativeId: apiAssignedExternalCreativeId } } = reg_response;
+        const { creative: { externalCreativeId: apiAssignedExternalCreativeId, mediaData: regMediaData } } = reg_response;
+        regMediaData.forEach(media => {
+            const { file: {id: regFileId}, hash: mediaHash } = media;
+            parent.postMessage({ pluginMessage: {
+                    key: 'store-node-plugin-data-with-predicate',
+                    value: { lookupPrdicate: { ozonFileId: regFileId }, data2set: { ozonHash: mediaHash } }
+            }}, '*')
+        });
         parent.postMessage({
             pluginMessage: {
                 key:   'store-page-plugin-data',
@@ -345,6 +352,10 @@ async function letsRegister() {
 
 function forgetRegistration() {
     parent.postMessage({pluginMessage: { key: 'forget-registration' }}, '*');
+}
+
+function formBodyClicked() {
+    parent.postMessage({ pluginMessage: { key: 'resize-ui', value: { height: document.documentElement.scrollHeight } } }, '*');
 }
 
 </script>
@@ -385,7 +396,7 @@ function forgetRegistration() {
     <el-form ref="regForm"
              label-position="top" size="small" status-icon :model="commonCreativeFields"
              :rules="commonFieldsRules"
-             @submit.prevent>
+             @submit.prevent @click="formBodyClicked">
         <el-form-item label="Название креатива" prop="title">
             <el-input v-model="commonCreativeFields.title"></el-input>
         </el-form-item>
