@@ -100,9 +100,7 @@ watchEffect(async () => {
         ozonCreativeData.value = null;
     }
 });
-provide('ozon-creative-data', {
-    ozonCreativeData
-});
+provide('ozon-creative-data', { ozonCreativeData });
 
 </script>
 

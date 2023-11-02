@@ -1,4 +1,7 @@
 export const figmaClientStorageKey = 'SETTINGS';
+
+export const legalMarkerPlaceholderName = '#marker';
+export const figmaDefaultFontName = { family: 'Inter', style: 'Regular' };
 export const figmaPagePluginDataKey = 'ozon-creative-data';
 export const figmaComponentPluginDataKey = 'ozon-media-data';
 

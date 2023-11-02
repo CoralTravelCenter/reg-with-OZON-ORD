@@ -3,7 +3,7 @@ import {
     figmaComponentPluginDataKey,
     figmaPagePluginDataKey,
     setNodeMediaData,
-    clearNodeMediaData
+    clearNodeMediaData, legalMarkerPlaceholderName, figmaDefaultFontName
 } from "../commons";
 import { listenForAPIRequests } from "../call-api";
 import { isMatchWith } from "lodash";
@@ -68,12 +68,45 @@ figma.ui.onmessage = (msg) => {
             figma.currentPage.setPluginData(figmaPagePluginDataKey, '');
             informUIAboutSelection();
             break;
+        case 'apply-legal-labels':
+            try {
+                applyLegalLabels(msg.value);
+            } catch (ex) {
+                console.log('!!!!!!!!!!!', ex);
+            }
+            break;
     }
 };
 
 informUIAboutSelection();
 
 //======================================================================================================================
+
+async function applyLegalLabels(label) {
+    for (const node of figma.currentPage.children) {
+        let marker_placeholder = node.findOne(n => n.name === legalMarkerPlaceholderName);
+        const placeholder_found = !!marker_placeholder;
+        if (!placeholder_found) {
+            marker_placeholder = figma.createText();
+            await figma.loadFontAsync(figmaDefaultFontName);
+        } else {
+            try {
+                await Promise.all(marker_placeholder.getRangeAllFontNames(0, marker_placeholder.characters.length).map(figma.loadFontAsync));
+            } catch (ex){
+                await figma.loadFontAsync(figmaDefaultFontName);
+            }
+        }
+        marker_placeholder.autoRename = false;
+        marker_placeholder.characters = label;
+        if (!placeholder_found) {
+            marker_placeholder.name = legalMarkerPlaceholderName;
+            node.appendChild(marker_placeholder);
+            marker_placeholder.x = (node.width - marker_placeholder.width) / 2;
+            marker_placeholder.y = node.height - 3 * marker_placeholder.height;
+        }
+    }
+}
+
 function trackNodesPluginData() {
     figma.currentPage.children.forEach(node => {
         const trackedNodeId = node.getPluginData('figma-node-id');
@@ -93,7 +126,7 @@ function informUIAboutSelection() {
             return {
                 nodeId: node.id,
                 nodeName: node.name,
-                markerPlaceholderId: node.findOne(n => n.name === '#marker')?.id,
+                markerPlaceholderId: node.findOne(n => n.name === legalMarkerPlaceholderName)?.id,
                 pluginData: node.getPluginData(figmaComponentPluginDataKey)
             };
         });

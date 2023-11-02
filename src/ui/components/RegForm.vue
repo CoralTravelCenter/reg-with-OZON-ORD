@@ -348,6 +348,12 @@ async function letsRegister() {
                 value: { externalCreativeId: apiAssignedExternalCreativeId }
             }
         }, '*');
+        parent.postMessage({
+            pluginMessage: {
+                key: 'apply-legal-labels',
+                value: generatedLegalLabel.value
+            }
+        }, '*');
 
         registrationInProgress.value = false;
         parent.postMessage({ pluginMessage: { key: 'inform-about-selection'} }, '*');
