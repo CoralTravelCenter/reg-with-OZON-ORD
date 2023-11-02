@@ -4,7 +4,7 @@ import { onMounted, reactive, ref, defineProps, watch, toRef, computed, onUpdate
 import { callAPI } from "../../call-api";
 import { find, groupBy } from "lodash";
 import { Plus, Delete, Link, WarningFilled } from '@element-plus/icons-vue';
-import { api_endpoint_host, figmaComponentPluginDataKey } from "../../commons";
+import { api_endpoint_host, figmaComponentPluginDataKey, legalLabel } from "../../commons";
 import moment from 'moment';
 import { v4 } from "uuid";
 
@@ -226,7 +226,7 @@ watch(ozonCreativeData, (newOzonCreativeData) => {
         commonCreativeFields.sharedCreativeDescription = '';
         shareCreativeDescriptions.value = false;
         commonCreativeFields.creativeInfos.forEach(info => {
-            const media = newOzonCreativeData?.mediaData.find(media => media.file.id === info.pluginData.ozonFileId);
+            const media = newOzonCreativeData?.mediaData.find(media => String(media.file.id) === String(info.pluginData.ozonFileId));
             if (media) info.description = media.description;
         });
     }
@@ -295,13 +295,18 @@ async function letsRegister() {
         if (commonCreativeFields.isSocialAdv) creativeRegData.isSocialAdv = commonCreativeFields.isSocialAdv;
         if (commonCreativeFields.isNative) creativeRegData.isNative = commonCreativeFields.isNative;
         creativeRegData.mediaData = commonCreativeFields.creativeInfos.map(creative => {
+            const media_description = shareCreativeDescriptions.value ? commonCreativeFields.sharedCreativeDescription : creative.description;
             return {
-                description: shareCreativeDescriptions.value ? commonCreativeFields.sharedCreativeDescription : creative.description,
-                file:        { id: creative.ozonFileId || creative.pluginData.ozonFileId }
+                hash: creative.pluginData.ozonHash,
+                description: media_description,
+                file:        {
+                    id: creative.ozonFileId || creative.pluginData.ozonFileId,
+                    description: media_description
+                }
             };
         }).concat(ozonCreativeData.value?.mediaData?.filter(media => {
             if (media.file) {
-                return !commonCreativeFields.creativeInfos.find(info => info.pluginData?.ozonFileId === media.file.id);
+                return !commonCreativeFields.creativeInfos.find(info => String(info.pluginData?.ozonFileId) === String(media.file.id));
             } else {
                 return true;
             }
@@ -355,8 +360,18 @@ function forgetRegistration() {
 }
 
 function formBodyClicked() {
-    parent.postMessage({ pluginMessage: { key: 'resize-ui', value: { height: document.documentElement.scrollHeight } } }, '*');
+    setTimeout(() => {
+        parent.postMessage({ pluginMessage: { key: 'resize-ui', value: { height: document.documentElement.scrollHeight } } }, '*');
+    }, 501);
 }
+
+const adCustomer = computed(() => {
+    return commonCreativeFields.isSelfPromotion ? selectedOrganisation.value.fullOpf : selectedContract.value.customerFullOpf;
+});
+
+const generatedLegalLabel = computed(() => {
+    return legalLabel(adCustomer.value, ozonCreativeData.value.marker);
+});
 
 </script>
 
@@ -378,7 +393,7 @@ function formBodyClicked() {
                 </el-popconfirm>
             </div>
         </template>
-        <el-descriptions size="small" border>
+        <el-descriptions size="small" border column="3" direction="horizontal">
             <el-descriptions-item align="center">
                 <template #label>Маркер</template>
                 <el-text type="success">{{ ozonCreativeData.marker }}</el-text>
@@ -390,6 +405,10 @@ function formBodyClicked() {
             <el-descriptions-item align="center">
                 <template #label>Изменен</template>
                 <el-text type="info">{{ ozonCreative_editedAt }}</el-text>
+            </el-descriptions-item>
+            <el-descriptions-item align="center">
+                <template #label>Макркировка</template>
+                <el-text :type="adCustomer ? 'success' : 'danger' ">{{ generatedLegalLabel }}</el-text>
             </el-descriptions-item>
         </el-descriptions>
     </el-card>

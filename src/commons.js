@@ -25,3 +25,7 @@ export function setNodeMediaData(node_or_id, data2set = {}) {
 export function clearNodeMediaData(node_or_id) {
     setNodeMediaData(node_or_id, '');
 }
+
+export function legalLabel(customer_name, erid) {
+    return `Реклама. ${ customer_name }. ${ erid }`;
+}

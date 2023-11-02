@@ -6,7 +6,7 @@ import {
     clearNodeMediaData
 } from "../commons";
 import { listenForAPIRequests } from "../call-api";
-import { find } from "lodash";
+import { isMatchWith } from "lodash";
 
 figma.showUI(__html__, { width: 600, height: 600 });
 
@@ -52,7 +52,11 @@ figma.ui.onmessage = (msg) => {
                 try {
                     pluginData = JSON.parse(node.getPluginData(figmaComponentPluginDataKey));
                 } catch (e) {}
-                return find([pluginData], lookupPrdicate);
+                return isMatchWith(pluginData, lookupPrdicate, (dataVal, lookupVal, key) => {
+                    if (key === 'ozonFileId') {
+                        return String(dataVal) === String(lookupVal);
+                    }
+                });
             });
             node2update && setNodeMediaData(node2update, data2set);
             break;

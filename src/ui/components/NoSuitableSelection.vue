@@ -3,7 +3,13 @@
 </script>
 
 <template>
-    <el-empty description="Please select one or more FRAME(s)"></el-empty>
+    <el-empty>
+        <template #description>
+            <el-text type="warning">
+                Текущаая страница в Фигме должна соодержать только компоненты
+            </el-text>
+        </template>
+    </el-empty>
 </template>
 
 <style scoped lang="less">
